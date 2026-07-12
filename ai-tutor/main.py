@@ -16,7 +16,7 @@ import uvicorn
 
 from app.core.config import settings
 from app.db.database import init_db, close_db
-from app.api.routes import hint
+from app.api.routes import hint, admin
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,6 +46,8 @@ app = FastAPI(
 
 # Include routes
 app.include_router(hint.router)
+app.include_router(admin.router)
+
 
 
 @app.get("/health", summary="Service Health Check", tags=["System"])

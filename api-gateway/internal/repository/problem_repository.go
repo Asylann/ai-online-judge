@@ -71,10 +71,43 @@ func (r *pgProblemRepository) ListProblems(ctx context.Context) ([]models.Proble
 		p.MemoryLimit = 128000
 		problems = append(problems, p)
 	}
-	return problems, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	for i := range problems {
+		if tcs, _ := r.fetchTestCases(ctx, problems[i].ID); tcs != nil {
+			problems[i].TestCases = tcs
+		}
+	}
+
+	return problems, nil
 }
 
-// GetProblemByID fetches a single problem by UUID.
+func (r *pgProblemRepository) fetchTestCases(ctx context.Context, problemID uuid.UUID) ([]models.TestCase, error) {
+	query := `
+		SELECT id, problem_id, stdin, expected_output, difficulty_rank, COALESCE(is_sample, false), created_at
+		FROM test_cases
+		WHERE problem_id = $1
+		ORDER BY difficulty_rank ASC`
+	rows, err := r.db.Query(ctx, query, problemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tcs []models.TestCase
+	for rows.Next() {
+		var tc models.TestCase
+		if err := rows.Scan(&tc.ID, &tc.ProblemID, &tc.Stdin, &tc.ExpectedOutput, &tc.DifficultyRank, &tc.IsSample, &tc.CreatedAt); err != nil {
+			return nil, err
+		}
+		tcs = append(tcs, tc)
+	}
+	return tcs, nil
+}
+
+// GetProblemByID fetches a single problem by UUID along with its 10 test cases.
 func (r *pgProblemRepository) GetProblemByID(ctx context.Context, id uuid.UUID) (*models.Problem, error) {
 	query := `
 		SELECT id, title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
@@ -98,6 +131,9 @@ func (r *pgProblemRepository) GetProblemByID(ctx context.Context, id uuid.UUID) 
 	}
 	p.TimeLimit = 2000
 	p.MemoryLimit = 128000
+	if tcs, _ := r.fetchTestCases(ctx, id); tcs != nil {
+		p.TestCases = tcs
+	}
 	return &p, nil
 }
 

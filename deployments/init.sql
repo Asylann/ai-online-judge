@@ -94,6 +94,7 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tests_passed INT DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tests_total INT DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_stdin TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_expected_output TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'student';
 
 
 -- ── Canonical ZPD Problem Set (14 Problems) ───────────────────────────────────
@@ -209,6 +210,14 @@ INSERT INTO problems (id, title, description, stdin, expected_output, difficulty
   E'wrt\nwrf\ner\nett\nrftt',
   'wertf',
   5.2
+),
+(
+  'a8f9a993-79ee-4e3b-ac66-f34ca8e70b12',
+  'Adding all listed numbers',
+  E'Given the count of numbers N on the first token, followed by N integers (separated by spaces or newlines across arbitrary lines), sum the N integers and output the total.\n\n**Input format:** First token = N (number of integers). Next N tokens = integers to be summed.\n**Output format:** A single integer equal to the sum of the N numbers.\n\n### Example:\n**Input:**\n5\n1 2 3 4 5\n**Output:** 15',
+  E'5\n1 2 3 4 5',
+  '15',
+  1.5
 )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
@@ -389,5 +398,17 @@ INSERT INTO test_cases (problem_id, stdin, expected_output, difficulty_rank, is_
 ('a0000000-0000-4000-a000-000000000014', E'ab\nba\nca\ncb',           'abc',   7, FALSE),
 ('a0000000-0000-4000-a000-000000000014', E'az\nbz\ncz\nza\nzb\nzc',  'abcz',  8, FALSE),
 ('a0000000-0000-4000-a000-000000000014', E'dcba\ncba\nba\na',         'dcba',  9, FALSE),
-('a0000000-0000-4000-a000-000000000014', E'bcd\nacd\nabd\nabc',       'dcba', 10, FALSE)
+('a0000000-0000-4000-a000-000000000014', E'bcd\nacd\nabd\nabc',       'dcba', 10, FALSE),
+
+-- ═══ Problem 15: Adding all listed numbers ═══════════════════════════════════
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'5\n1 2 3 4 5',                                                               '15',          1, TRUE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', '0',                                                                           '0',           2, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'1\n-1',                                                                      '-1',          3, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'3\n5 10 15',                                                                 '30',          4, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'4\n1 1 1 1',                                                                 '4',           5, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'5\n10 -10 20 -20 30',                                                        '30',          6, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'6\n1000000 2000000 3000000 -1000000 -2000000 -1000000',                      '2000000',     7, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'7\n2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647', '15032385529', 8, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'10\n1 1 1 1 1 1 1 1 1 1',                                                    '10',          9, FALSE),
+('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'10\n100 200 300 400 500 600 700 800 900 1000',                              '5500',       10, FALSE)
 ON CONFLICT DO NOTHING;

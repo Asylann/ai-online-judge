@@ -262,6 +262,7 @@ func RegisterRoutes(
 	authH *AuthHandler,
 	problemH *ProblemHandler,
 	submissionH *SubmissionHandler,
+	adminH *AdminHandler,
 	jwtSecret string,
 ) {
 	// Register route groups across /api/v1, /api, and root (/) prefixes
@@ -295,4 +296,21 @@ func RegisterRoutes(
 		g.GET("/:id/stats", submissionH.GetUserStats)
 		g.GET("/:id/submissions", submissionH.ListUserSubmissions)
 	}
+
+	// Admin protected routes (/api/v1/admin, /api/admin, /admin)
+	if adminH != nil {
+		for _, prefix := range []string{"/api/v1/admin", "/api/admin", "/admin"} {
+			g := r.Group(prefix)
+			g.Use(RequireAuth(jwtSecret), RequireAdmin(jwtSecret))
+			g.GET("/users", adminH.ListUsers)
+			g.DELETE("/users/:id", adminH.DeleteUser)
+			g.DELETE("/submissions/:id", adminH.DeleteSubmission)
+			g.POST("/problems", adminH.CreateProblem)
+			g.PUT("/problems/:id", adminH.UpdateProblem)
+			g.DELETE("/problems/:id", adminH.DeleteProblem)
+			g.POST("/generate-tests", adminH.GenerateTestCases)
+			g.POST("/problems/generate-tests", adminH.GenerateTestCases)
+		}
+	}
 }
+

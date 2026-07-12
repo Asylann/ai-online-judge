@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Cpu, LogOut, User as UserIcon } from "lucide-react";
+import { Cpu, LogOut, User as UserIcon, ShieldAlert } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -42,6 +42,16 @@ export const Navbar: React.FC = () => {
           >
             Profile & Dashboard
           </Link>
+
+          {user?.role === "admin" && (
+            <Link
+              href="/admin/problems"
+              className="flex items-center space-x-1.5 text-xs font-bold tracking-wider uppercase px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-xs"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Admin Page</span>
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <div className="flex items-center space-x-4 pl-4 border-l border-slate-900/10">

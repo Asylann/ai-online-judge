@@ -20,18 +20,19 @@ type User struct {
 
 // Problem represents an algorithmic task stored in the system.
 type Problem struct {
-	ID              uuid.UUID `json:"id" db:"id"`
-	Title           string    `json:"title" db:"title"`
-	Description     string    `json:"description" db:"description"`
-	Difficulty      string    `json:"difficulty" db:"difficulty"` // "easy" | "medium" | "hard"
-	TimeLimit       int       `json:"time_limit_ms" db:"time_limit_ms"`
-	MemoryLimit     int       `json:"memory_limit_kb" db:"memory_limit_kb"`
-	Tags            []string  `json:"tags" db:"tags"`
-	ASTComplexity   float64   `json:"ast_complexity_score" db:"ast_complexity_score"`
-	DifficultyScore float64   `json:"difficulty_score" db:"difficulty_score"`
-	Stdin           string    `json:"stdin" db:"stdin"`             // sample only — shown in UI sidebar
-	ExpectedOutput  string    `json:"expected_output" db:"expected_output"` // sample only
-	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	ID              uuid.UUID  `json:"id" db:"id"`
+	Title           string     `json:"title" db:"title"`
+	Description     string     `json:"description" db:"description"`
+	Difficulty      string     `json:"difficulty" db:"difficulty"` // "easy" | "medium" | "hard"
+	TimeLimit       int        `json:"time_limit_ms" db:"time_limit_ms"`
+	MemoryLimit     int        `json:"memory_limit_kb" db:"memory_limit_kb"`
+	Tags            []string   `json:"tags" db:"tags"`
+	ASTComplexity   float64    `json:"ast_complexity_score" db:"ast_complexity_score"`
+	DifficultyScore float64    `json:"difficulty_score" db:"difficulty_score"`
+	Stdin           string     `json:"stdin" db:"stdin"`             // sample only — shown in UI sidebar
+	ExpectedOutput  string     `json:"expected_output" db:"expected_output"` // sample only
+	TestCases       []TestCase `json:"test_cases,omitempty" db:"-"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 }
 
 // TestCase is a single ranked test case for a Problem.
