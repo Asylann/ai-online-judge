@@ -1,0 +1,32 @@
+# Go workspace (local only — never commit)
+go.work
+go.work.sum
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment secrets
+.env
+*.env
+.env.local
+
+# Node.js
+node_modules/
+.next/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+.vscode/
+AGENTS.md
+Context_From_AI_chats.txt
+Context_From_AI_Chats.txt
+example_index.html
