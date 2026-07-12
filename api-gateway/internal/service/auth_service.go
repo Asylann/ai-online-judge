@@ -26,6 +26,7 @@ type AuthService interface {
 type jwtClaims struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+	Role     string `json:"role"` // "student" | "admin"
 	jwt.RegisteredClaims
 }
 
@@ -91,6 +92,7 @@ func (s *authService) generateToken(user *models.User) (string, error) {
 	claims := jwtClaims{
 		UserID:   user.ID.String(),
 		Username: user.Username,
+		Role:     user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -101,3 +103,4 @@ func (s *authService) generateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)
 }
+

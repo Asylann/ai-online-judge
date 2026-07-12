@@ -15,26 +15,18 @@ import (
 // contextKeyUserID is the Gin context key used to store the authenticated user's UUID.
 // Use handler.GetUserID(c) to read it inside downstream handlers.
 const contextKeyUserID = "user_id"
+const contextKeyRole = "role"
 
 // jwtAuthClaims mirrors the claims produced by auth_service.go.
 // Both must stay in sync — any field added to the token must appear here.
 type jwtAuthClaims struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 // RequireAuth returns a Gin middleware that enforces JWT authentication.
-//
-// Flow:
-//  1. Extract "Authorization: Bearer <token>" header
-//  2. Parse and validate HMAC-SHA256 signature against jwtSecret
-//  3. Reject expired or malformed tokens with HTTP 401
-//  4. Inject user_id string into Gin context for downstream handlers
-//
-// Usage in RegisterRoutes:
-//
-//	submissions.Use(RequireAuth(cfg.JWTSecret))
 func RequireAuth(jwtSecret string) gin.HandlerFunc {
 	secret := []byte(jwtSecret)
 
@@ -74,9 +66,64 @@ func RequireAuth(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		// Inject authenticated user_id into Gin context for use in downstream handlers
-		// Retrieve with: userID := c.GetString(handler.GetContextKeyUserID())
+		// Inject authenticated user_id and role into Gin context for use in downstream handlers
 		c.Set(contextKeyUserID, claims.UserID)
+		c.Set(contextKeyRole, claims.Role)
+		c.Next()
+	}
+}
+
+// RequireAdmin returns a Gin middleware that checks if the JWT claims contain an admin role.
+func RequireAdmin(jwtSecret string) gin.HandlerFunc {
+	secret := []byte(jwtSecret)
+
+	return func(c *gin.Context) {
+		role := c.GetString(contextKeyRole)
+		if role == "" {
+			authHeader := c.GetHeader("Authorization")
+			if authHeader == "" {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "missing Authorization header",
+				})
+				return
+			}
+
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "invalid Authorization header format — expected 'Bearer <token>'",
+				})
+				return
+			}
+			tokenStr := parts[1]
+
+			claims := &jwtAuthClaims{}
+			token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, errors.New("unexpected signing method")
+				}
+				return secret, nil
+			})
+
+			if err != nil || !token.Valid {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "invalid or expired token",
+				})
+				return
+			}
+
+			c.Set(contextKeyUserID, claims.UserID)
+			c.Set(contextKeyRole, claims.Role)
+			role = claims.Role
+		}
+
+		if role != "admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "admin access required",
+			})
+			return
+		}
+
 		c.Next()
 	}
 }
@@ -86,6 +133,12 @@ func RequireAuth(jwtSecret string) gin.HandlerFunc {
 func GetContextKeyUserID() string {
 	return contextKeyUserID
 }
+
+// GetContextKeyRole returns the context key used to store the authenticated user's role.
+func GetContextKeyRole() string {
+	return contextKeyRole
+}
+
 
 // CORSMiddleware enables CORS across localhost and frontend origins.
 func CORSMiddleware() gin.HandlerFunc {

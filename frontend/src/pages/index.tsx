@@ -13,6 +13,7 @@ interface Problem {
   description: string;
   difficulty?: string;
   difficulty_score: number;
+  test_cases?: any[];
 }
 
 const HERO_TEXT = "AI-Powered Online Judge with Socratic Virtual TA & Effort-Based EDM.";
@@ -162,8 +163,9 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get(`${API_URL}/problems`);
-        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-          setProblems(response.data);
+        const probData = response.data?.problems || response.data;
+        if (probData && Array.isArray(probData) && probData.length > 0) {
+          setProblems(probData);
         }
       } catch (err) {
         console.warn("Could not fetch problems from backend API, defaulting to mock canonical problems.", err);

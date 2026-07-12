@@ -25,6 +25,9 @@ type Config struct {
 
 	// JWT — HS256 signing secret for stateless auth
 	JWTSecret string
+
+	// AI Tutor service URL for proxying AI generation requests
+	AITutorURL string
 }
 
 // Load reads environment variables and returns a validated Config.
@@ -36,7 +39,9 @@ func Load() (*Config, error) {
 		RedisURL:    os.Getenv("REDIS_URL"),
 		RabbitMQURL: os.Getenv("RABBITMQ_URL"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
+		AITutorURL:  getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
 	}
+
 
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL is required")

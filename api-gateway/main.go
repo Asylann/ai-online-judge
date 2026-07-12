@@ -85,16 +85,19 @@ func main() {
 	userRepo       := repository.NewUserRepository(db)
 	problemRepo    := repository.NewProblemRepository(db)
 	submissionRepo := repository.NewSubmissionRepository(db)
+	adminRepo      := repository.NewAdminRepository(db)
 
 	// Service layer — orchestrates business logic + RabbitMQ publishing
 	authSvc       := service.NewAuthService(userRepo, cfg.JWTSecret)
 	problemSvc    := service.NewProblemService(problemRepo)
 	submissionSvc := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
+	adminSvc      := service.NewAdminService(adminRepo, cfg.AITutorURL)
 
 	// Handler layer — HTTP parsing and response writing only
 	authHandler       := handler.NewAuthHandler(authSvc)
 	problemHandler    := handler.NewProblemHandler(problemSvc)
 	submissionHandler := handler.NewSubmissionHandler(submissionSvc, userRepo)
+	adminHandler      := handler.NewAdminHandler(adminSvc)
 
 	// Suppress unused variable warning for rdb (used by future JWT middleware)
 	_ = rdb
@@ -112,7 +115,8 @@ func main() {
 	})
 
 	// Wire all route groups
-	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, cfg.JWTSecret)
+	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, cfg.JWTSecret)
+
 
 	// ── Step 5: Start HTTP Server ────────────────────────────────────────────────
 	addr := ":" + cfg.Port
