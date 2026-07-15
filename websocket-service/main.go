@@ -8,8 +8,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ai-online-judge/pkg/database"
+	_ "github.com/ai-online-judge/pkg/telemetry"
 	"github.com/ai-online-judge/websocket-service/internal/config"
 	"github.com/ai-online-judge/websocket-service/internal/ws"
 )
@@ -45,6 +47,9 @@ func main() {
 			"service": "websocket-service",
 		})
 	})
+
+	// Prometheus metrics scraping endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// GET /ws?token=<jwt> — upgraded via gorilla/websocket and registered with Hub
 	r.GET("/ws", ws.ServeWS(hub, cfg.JWTSecret))

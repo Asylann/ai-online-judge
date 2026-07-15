@@ -31,6 +31,10 @@ type SubmissionRepository interface {
 	// UpdateVerdict persists the multi-test verdict and effort_based_metrics to PostgreSQL.
 	// Called after all test cases complete — all attempts are logged (EDM).
 	UpdateVerdict(ctx context.Context, v VerdictUpdate) error
+
+	// HasPriorAcceptedSubmission checks if the user already solved this exact problem previously (status = 'Accepted').
+	// Used by Executor to award +10 leaderboard points only on the first solve.
+	HasPriorAcceptedSubmission(ctx context.Context, userID, problemID, currentSubmissionID uuid.UUID) (bool, error)
 }
 
 // TestCaseRepository defines the contract for fetching ranked test cases.
@@ -93,6 +97,18 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 		return fmt.Errorf("submission_repository.UpdateVerdict: no row found for id %s", v.SubmissionID)
 	}
 	return nil
+}
+
+// HasPriorAcceptedSubmission returns true if the user has an existing Accepted submission for this problem other than currentSubmissionID.
+func (r *pgSubmissionRepository) HasPriorAcceptedSubmission(ctx context.Context, userID, problemID, currentSubmissionID uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM submissions
+			WHERE user_id = $1 AND problem_id = $2 AND status = 'Accepted' AND id != $3
+		)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, userID, problemID, currentSubmissionID).Scan(&exists)
+	return exists, err
 }
 
 // GetTestCasesForProblem fetches all ranked test cases for a given problem,

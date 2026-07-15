@@ -72,6 +72,7 @@ export default function ProblemWorkspacePage() {
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<ProblemDetail | null>(null);
   const [showRecommendation, setShowRecommendation] = useState<boolean>(false);
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
 
   // Phase 8: Fetch Content-Based Recommendation (CBRS) inside student's ZPD
   const fetchRecommendation = async () => {
@@ -125,16 +126,16 @@ export default function ProblemWorkspacePage() {
             setTestsTotal(tt);
           }
           if (newStatus !== "Pending" && newStatus !== "In Queue" && newStatus !== "Processing") {
-            // Verdict finalized inside Judge0
+            // Verdict finalized inside Judge0 or local fast evaluator
             if (newStatus === "Accepted") {
               setSubmitting(false);
+              setActiveSubmissionId(null);
               fetchRecommendation();
             } else {
-              // For WA, RE, TLE, CE: keep submitting = true briefly while ai-tutor generates the Socratic hint
-              // Set a 4-second timeout so if the hint takes longer, the card shows the exact verdict immediately
               setTimeout(() => {
                 setSubmitting(false);
-              }, 4000);
+                setActiveSubmissionId(null);
+              }, 1500);
             }
           }
         } else if (msg.type === "ai_hint") {
@@ -144,6 +145,7 @@ export default function ProblemWorkspacePage() {
             cognitive_effort_index: msg.cognitive_effort_index || 2.5,
           });
           setSubmitting(false);
+          setActiveSubmissionId(null);
         }
       } catch (err) {
         console.warn("[Phase 7] Failed to parse WebSocket message:", err);
@@ -190,6 +192,37 @@ export default function ProblemWorkspacePage() {
     fetchProblem();
   }, [id]);
 
+  useEffect(() => {
+    if (!submitting || !activeSubmissionId) return;
+    const interval = setInterval(async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get(`${API_URL}/submissions/${activeSubmissionId}`, { headers });
+        const data = res.data;
+        if (data && data.status && data.status !== "Pending" && data.status !== "In Queue" && data.status !== "Processing") {
+          setVerdict(data.status);
+          if (typeof data.tests_passed === "number") setTestsPassed(data.tests_passed);
+          if (typeof data.tests_total === "number") setTestsTotal(data.tests_total);
+          if (data.status !== "Accepted") {
+            setHint({
+              hint_text: data.ai_hint_text || `Virtual TA (Socratic Hint): Your code returned status ${data.status}. Notice any structural or runtime deviation?`,
+              target_line: data.target_line || null,
+              cognitive_effort_index: data.cognitive_effort_index || 2.5,
+            });
+          } else {
+            fetchRecommendation();
+          }
+          setSubmitting(false);
+          setActiveSubmissionId(null);
+        }
+      } catch (e) {
+        // ignore polling errors during async evaluation
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [submitting, activeSubmissionId]);
+
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
     if (newLang === "python3") setCode(DEFAULT_PYTHON_CODE);
@@ -201,7 +234,7 @@ export default function ProblemWorkspacePage() {
     if (!id || typeof id !== "string") return;
 
     setSubmitting(true);
-    setVerdict(null);
+    setVerdict("Evaluating inside Sandbox (Isolate cgroup)...");
     setTestsPassed(0);
     setTestsTotal(0);
     setHint(null);
@@ -223,24 +256,30 @@ export default function ProblemWorkspacePage() {
       const submissionData = response.data;
 
       if (submissionData) {
+        if (submissionData.submission_id || submissionData.id) {
+          setActiveSubmissionId(submissionData.submission_id || submissionData.id);
+        }
         const finalStatus = submissionData.status || "Accepted";
         setVerdict(finalStatus);
 
         if (finalStatus === "Pending" || finalStatus === "In Queue" || finalStatus === "Processing") {
-          // If websocket is connected or pending, keep submitting = true and wait for real-time push!
           setVerdict("Evaluating inside Sandbox (Isolate cgroup)...");
         } else if (!wsConnected) {
-          // Fallback if WebSocket is disconnected during local testing
           if (finalStatus !== "Accepted") {
             setHint({
-              hint_text: submissionData.ai_hint_text || `Virtual TA (Socratic Hint): Your code returned status ${finalStatus}. Examine your loop invariants, data types, and boundary conditions. Notice any structural or runtime deviation?`,
+              hint_text: submissionData.ai_hint_text || `Virtual TA (Socratic Hint): Your code returned status ${finalStatus}. Notice any structural or runtime deviation?`,
               target_line: submissionData.target_line || null,
               cognitive_effort_index: submissionData.cognitive_effort_index || 2.5,
             });
+          } else {
+            fetchRecommendation();
           }
           setSubmitting(false);
+          setActiveSubmissionId(null);
         } else if (finalStatus === "Accepted") {
           setSubmitting(false);
+          setActiveSubmissionId(null);
+          fetchRecommendation();
         }
       }
     } catch (err: any) {
@@ -248,6 +287,7 @@ export default function ProblemWorkspacePage() {
         err.response?.data?.error || "Execution failed inside sandbox. Please check API Gateway connectivity."
       );
       setSubmitting(false);
+      setActiveSubmissionId(null);
     }
   };
 

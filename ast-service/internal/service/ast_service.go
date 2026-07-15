@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/ai-online-judge/ast-service/internal/repository"
 )
@@ -180,6 +182,7 @@ func (s *astService) notifyAITutor(ctx context.Context, sub *repository.Submissi
 		return fmt.Errorf("build request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(httpReq.Header))
 
 	resp, err := s.httpClient.Do(httpReq)
 	if err != nil {

@@ -22,15 +22,19 @@ type Config struct {
 	// The AST Service POSTs structural deviation analysis here to trigger
 	// Socratic hint generation (Educational Data Mining pipeline).
 	AITutorURL string // e.g. http://ai-tutor:8081
+
+	// JaegerEndpoint for OpenTelemetry OTLP HTTP trace exporting
+	JaegerEndpoint string
 }
 
 // Load reads environment variables and returns a validated Config.
 // Returns an error if any required variable is missing.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:        getEnvOrDefault("PORT", "8083"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		AITutorURL:  os.Getenv("AI_TUTOR_URL"),
+		Port:           getEnvOrDefault("PORT", "8083"),
+		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		AITutorURL:     os.Getenv("AI_TUTOR_URL"),
+		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
 	}
 
 	if cfg.DatabaseURL == "" {

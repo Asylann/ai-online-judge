@@ -18,6 +18,14 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }
 
+// LeaderboardEntry represents a user's rank and score on the global leaderboard.
+type LeaderboardEntry struct {
+	Rank     int       `json:"rank"`
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
+	Score    int       `json:"score"`
+}
+
 // Problem represents an algorithmic task stored in the system.
 type Problem struct {
 	ID              uuid.UUID  `json:"id" db:"id"`

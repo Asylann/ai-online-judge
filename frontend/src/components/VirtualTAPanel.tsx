@@ -24,7 +24,7 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
 }) => {
   return (
     <AnimatePresence mode="wait">
-      {(hint || isLoading || Boolean(verdict)) && (
+      {(hint || isLoading || (Boolean(verdict) && verdict !== "Accepted")) && (
         <motion.div
           key="virtual-ta-panel"
           initial={{ opacity: 0, y: 16, scale: 0.98 }}

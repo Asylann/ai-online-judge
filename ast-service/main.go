@@ -22,6 +22,7 @@ import (
 	"github.com/ai-online-judge/ast-service/internal/repository"
 	"github.com/ai-online-judge/ast-service/internal/service"
 	"github.com/ai-online-judge/pkg/database"
+	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 func main() {
@@ -33,6 +34,18 @@ func main() {
 
 	// ── Step 2: Establish External Connections ───────────────────────────────────
 	ctx := context.Background()
+
+	// ── Step 2.5: Initialize OpenTelemetry Tracing ──────────────────────────────
+	tracerProvider, err := telemetry.InitTracer("ast-service", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Fatalf("[ast-service] Failed to initialize tracer: %v", err)
+	}
+	defer func() {
+		if err := tracerProvider.Shutdown(context.Background()); err != nil {
+			log.Printf("[ast-service] Error shutting down tracer provider: %v", err)
+		}
+	}()
+	log.Printf("[ast-service] OpenTelemetry initialized (endpoint: %s)", cfg.JaegerEndpoint)
 
 	// PostgreSQL — fetch code_base64 for parsing; write back AST metrics (EDM)
 	db, err := database.NewPostgresPool(ctx)

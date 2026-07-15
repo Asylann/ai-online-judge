@@ -9,10 +9,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/api-gateway/internal/service"
 )
+
+// OTELSubmissionMiddleware returns a Gin middleware that starts an OpenTelemetry
+// span for POST /api/submissions and attaches the traced context to c.Request.Context().
+func OTELSubmissionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tracer := otel.Tracer("api-gateway")
+		parentCtx := otel.GetTextMapPropagator().Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+		ctx, span := tracer.Start(parentCtx, "POST /api/submissions")
+		defer span.End()
+
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
 
 // ProblemHandler handles HTTP routes for the problems domain.
 type ProblemHandler struct {
@@ -263,6 +279,7 @@ func RegisterRoutes(
 	problemH *ProblemHandler,
 	submissionH *SubmissionHandler,
 	adminH *AdminHandler,
+	leaderboardH *LeaderboardHandler,
 	jwtSecret string,
 ) {
 	// Register route groups across /api/v1, /api, and root (/) prefixes
@@ -286,7 +303,7 @@ func RegisterRoutes(
 		g := r.Group(prefix)
 		g.Use(RequireAuth(jwtSecret))
 		g.GET("", submissionH.ListSubmissions)
-		g.POST("", submissionH.SubmitCode)
+		g.POST("", OTELSubmissionMiddleware(), submissionH.SubmitCode)
 		g.GET("/:id", submissionH.GetSubmission)
 	}
 
@@ -295,6 +312,14 @@ func RegisterRoutes(
 		g := r.Group(prefix)
 		g.GET("/:id/stats", submissionH.GetUserStats)
 		g.GET("/:id/submissions", submissionH.ListUserSubmissions)
+	}
+
+	// Leaderboard routes (/api/v1/leaderboard, /api/leaderboard, /leaderboard)
+	if leaderboardH != nil {
+		for _, prefix := range []string{"/api/v1/leaderboard", "/api/leaderboard", "/leaderboard"} {
+			g := r.Group(prefix)
+			g.GET("", leaderboardH.GetLeaderboard)
+		}
 	}
 
 	// Admin protected routes (/api/v1/admin, /api/admin, /admin)
