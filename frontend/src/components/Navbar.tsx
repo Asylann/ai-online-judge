@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Cpu, LogOut, User as UserIcon, ShieldAlert, Trophy } from "lucide-react";
+import { Cpu, LogOut, User as UserIcon, ShieldAlert, Trophy, BookOpen } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -29,6 +29,13 @@ export const Navbar: React.FC = () => {
             className="text-slate-600 hover:text-slate-900 transition-colors tracking-tight"
           >
             Problems
+          </Link>
+          <Link
+            href="/modules"
+            className="text-slate-700 hover:text-slate-900 transition-colors tracking-tight font-semibold flex items-center space-x-1 bg-amber-600/10 px-2.5 py-1 rounded-md border border-amber-600/20 text-amber-900"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+            <span>Curriculum</span>
           </Link>
           <Link
             href="/leaderboard"

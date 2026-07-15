@@ -43,9 +43,9 @@ func NewProblemRepository(db *pgxpool.Pool) ProblemRepository {
 // Zone of Proximal Development (ZPD).
 func (r *pgProblemRepository) ListProblems(ctx context.Context) ([]models.Problem, error) {
 	query := `
-		SELECT id, title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
+		SELECT id, module_id, COALESCE(sequential_order, 1), title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
 		FROM problems
-		ORDER BY difficulty_score ASC`
+		ORDER BY COALESCE(sequential_order, 999) ASC, difficulty_score ASC`
 
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
@@ -56,7 +56,7 @@ func (r *pgProblemRepository) ListProblems(ctx context.Context) ([]models.Proble
 	var problems []models.Problem
 	for rows.Next() {
 		var p models.Problem
-		if err := rows.Scan(&p.ID, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.ASTComplexity, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.ModuleID, &p.SequentialOrder, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.ASTComplexity, &p.CreatedAt); err != nil {
 			return nil, fmt.Errorf("problem_repository.ListProblems scan: %w", err)
 		}
 		p.DifficultyScore = p.ASTComplexity
@@ -110,13 +110,13 @@ func (r *pgProblemRepository) fetchTestCases(ctx context.Context, problemID uuid
 // GetProblemByID fetches a single problem by UUID along with its 10 test cases.
 func (r *pgProblemRepository) GetProblemByID(ctx context.Context, id uuid.UUID) (*models.Problem, error) {
 	query := `
-		SELECT id, title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
+		SELECT id, module_id, COALESCE(sequential_order, 1), title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
 		FROM problems
 		WHERE id = $1`
 
 	var p models.Problem
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&p.ID, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.ASTComplexity, &p.CreatedAt,
+		&p.ID, &p.ModuleID, &p.SequentialOrder, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.ASTComplexity, &p.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("problem_repository.GetProblemByID: %w", err)
@@ -173,7 +173,7 @@ func (r *pgProblemRepository) GetRecommendationZPD(ctx context.Context, userID u
 
 	// 4. Find unsolved problem closest to target AST complexity score
 	recQuery := `
-		SELECT id, title, description, difficulty_score, created_at
+		SELECT id, module_id, COALESCE(sequential_order, 1), title, description, difficulty_score, created_at
 		FROM problems
 		WHERE id != $1
 		  AND id NOT IN (SELECT problem_id FROM submissions WHERE user_id = $2 AND status = 'Accepted')
@@ -182,18 +182,18 @@ func (r *pgProblemRepository) GetRecommendationZPD(ctx context.Context, userID u
 
 	var p models.Problem
 	err = r.db.QueryRow(ctx, recQuery, currentProblemID, userID, targetDiff).Scan(
-		&p.ID, &p.Title, &p.Description, &p.ASTComplexity, &p.CreatedAt,
+		&p.ID, &p.ModuleID, &p.SequentialOrder, &p.Title, &p.Description, &p.ASTComplexity, &p.CreatedAt,
 	)
 	if err != nil {
 		// Fallback: if all problems solved or query returned no rows, pick closest other problem
 		fallbackQuery := `
-			SELECT id, title, description, difficulty_score, created_at
+			SELECT id, module_id, COALESCE(sequential_order, 1), title, description, difficulty_score, created_at
 			FROM problems
 			WHERE id != $1
 			ORDER BY ABS(difficulty_score - $2) ASC
 			LIMIT 1`
 		err = r.db.QueryRow(ctx, fallbackQuery, currentProblemID, targetDiff).Scan(
-			&p.ID, &p.Title, &p.Description, &p.ASTComplexity, &p.CreatedAt,
+			&p.ID, &p.ModuleID, &p.SequentialOrder, &p.Title, &p.Description, &p.ASTComplexity, &p.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("problem_repository.GetRecommendationZPD: %w", err)

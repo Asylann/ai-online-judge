@@ -140,6 +140,32 @@ func GetContextKeyRole() string {
 }
 
 
+// OptionalAuth parses the Bearer token if present and sets user_id in the context without aborting on missing/invalid token.
+func OptionalAuth(jwtSecret string) gin.HandlerFunc {
+	secret := []byte(jwtSecret)
+
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+				tokenStr := parts[1]
+				claims := &jwtAuthClaims{}
+				if token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+					if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, errors.New("unexpected signing method")
+					}
+					return secret, nil
+				}); err == nil && token.Valid {
+					c.Set(contextKeyUserID, claims.UserID)
+					c.Set(contextKeyRole, claims.Role)
+				}
+			}
+		}
+		c.Next()
+	}
+}
+
 // CORSMiddleware enables CORS across localhost and frontend origins.
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

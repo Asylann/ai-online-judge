@@ -280,6 +280,7 @@ func RegisterRoutes(
 	submissionH *SubmissionHandler,
 	adminH *AdminHandler,
 	leaderboardH *LeaderboardHandler,
+	moduleH *ModuleHandler,
 	jwtSecret string,
 ) {
 	// Register route groups across /api/v1, /api, and root (/) prefixes
@@ -319,6 +320,15 @@ func RegisterRoutes(
 		for _, prefix := range []string{"/api/v1/leaderboard", "/api/leaderboard", "/leaderboard"} {
 			g := r.Group(prefix)
 			g.GET("", leaderboardH.GetLeaderboard)
+		}
+	}
+
+	// Module routes (/api/v1/modules, /api/modules, /modules)
+	if moduleH != nil {
+		for _, prefix := range []string{"/api/v1/modules", "/api/modules", "/modules"} {
+			g := r.Group(prefix)
+			g.Use(OptionalAuth(jwtSecret))
+			g.GET("", moduleH.ListModules)
 		}
 	}
 

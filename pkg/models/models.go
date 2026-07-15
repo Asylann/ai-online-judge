@@ -29,6 +29,8 @@ type LeaderboardEntry struct {
 // Problem represents an algorithmic task stored in the system.
 type Problem struct {
 	ID              uuid.UUID  `json:"id" db:"id"`
+	ModuleID        *uuid.UUID `json:"module_id,omitempty" db:"module_id"`
+	SequentialOrder int        `json:"sequential_order" db:"sequential_order"`
 	Title           string     `json:"title" db:"title"`
 	Description     string     `json:"description" db:"description"`
 	Difficulty      string     `json:"difficulty" db:"difficulty"` // "easy" | "medium" | "hard"
@@ -41,6 +43,23 @@ type Problem struct {
 	ExpectedOutput  string     `json:"expected_output" db:"expected_output"` // sample only
 	TestCases       []TestCase `json:"test_cases,omitempty" db:"-"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+}
+
+// ProblemWithStatus extends Problem with curriculum progression status (is_locked, is_solved).
+type ProblemWithStatus struct {
+	Problem
+	IsLocked bool `json:"is_locked"`
+	IsSolved bool `json:"is_solved"`
+}
+
+// Module represents a curriculum learning path or grouping of problems.
+type Module struct {
+	ID              uuid.UUID           `json:"id" db:"id"`
+	Title           string              `json:"title" db:"title"`
+	Description     string              `json:"description" db:"description"`
+	SequentialOrder int                 `json:"sequential_order" db:"sequential_order"`
+	Problems        []ProblemWithStatus `json:"problems" db:"-"`
+	CreatedAt       time.Time           `json:"created_at" db:"created_at"`
 }
 
 // TestCase is a single ranked test case for a Problem.

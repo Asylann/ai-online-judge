@@ -25,11 +25,22 @@ CREATE TABLE IF NOT EXISTS users (
     created_at    TIMESTAMPTZ  DEFAULT now()
 );
 
+-- ── modules (Curriculum Learning Paths) ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS modules (
+    id               UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title            VARCHAR(255) NOT NULL,
+    description      TEXT         DEFAULT '',
+    sequential_order INT          NOT NULL DEFAULT 1,
+    created_at       TIMESTAMPTZ  DEFAULT now()
+);
+
 -- ── problems ──────────────────────────────────────────────────────────────────
 -- stdin / expected_output here are the SAMPLE shown in the UI sidebar only.
 -- Actual grading uses the test_cases table (10 cases per problem).
 CREATE TABLE IF NOT EXISTS problems (
     id               UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    module_id        UUID         REFERENCES modules(id) ON DELETE SET NULL,
+    sequential_order INT          DEFAULT 1,
     title            VARCHAR(255) NOT NULL,
     description      TEXT         NOT NULL,
     stdin            TEXT         DEFAULT '',   -- sample test shown in UI sidebar
@@ -96,6 +107,31 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_stdin TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_expected_output TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'student';
 
+
+-- ── Canonical Curriculum Modules ──────────────────────────────────────────────
+INSERT INTO modules (id, title, description, sequential_order) VALUES
+(
+  'b1000000-0000-4000-a000-000000000001',
+  'Module 1: Foundations & Core Arrays',
+  'Master basic array traversal, indexing, digit reversal, and stack invariants.',
+  1
+),
+(
+  'b1000000-0000-4000-a000-000000000002',
+  'Module 2: Data Structures & Structural AST Patterns',
+  'Explore binary tree height balance, sliding windows, hash mapping, and bottom-up dynamic programming.',
+  2
+),
+(
+  'b1000000-0000-4000-a000-000000000003',
+  'Module 3: Advanced Algorithms & Graph Topological Ordering',
+  'Tackle Kahn''s topological sort, merge K lists with priority queues, monotonic stacks, and bitwise N-Queens backtracking.',
+  3
+)
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  sequential_order = EXCLUDED.sequential_order;
 
 -- ── Canonical ZPD Problem Set (14 Problems) ───────────────────────────────────
 INSERT INTO problems (id, title, description, stdin, expected_output, difficulty_score) VALUES
@@ -225,6 +261,23 @@ ON CONFLICT (id) DO UPDATE SET
   stdin = EXCLUDED.stdin,
   expected_output = EXCLUDED.expected_output,
   difficulty_score = EXCLUDED.difficulty_score;
+
+-- Map problems to curriculum modules and assign sequential ordering inside modules
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000001', sequential_order = 1 WHERE id = 'a8f9a993-79ee-4e3b-ac66-f34ca8e70b12';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000001', sequential_order = 2 WHERE id = 'a0000000-0000-4000-a000-000000000001';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000001', sequential_order = 3 WHERE id = 'a0000000-0000-4000-a000-000000000002';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000001', sequential_order = 4 WHERE id = 'a0000000-0000-4000-a000-000000000003';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000001', sequential_order = 5 WHERE id = 'a0000000-0000-4000-a000-000000000004';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000002', sequential_order = 1 WHERE id = 'a0000000-0000-4000-a000-000000000005';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000002', sequential_order = 2 WHERE id = 'a0000000-0000-4000-a000-000000000006';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000002', sequential_order = 3 WHERE id = 'a0000000-0000-4000-a000-000000000007';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000002', sequential_order = 4 WHERE id = 'a0000000-0000-4000-a000-000000000008';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000002', sequential_order = 5 WHERE id = 'a0000000-0000-4000-a000-000000000009';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000003', sequential_order = 1 WHERE id = 'a0000000-0000-4000-a000-000000000010';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000003', sequential_order = 2 WHERE id = 'a0000000-0000-4000-a000-000000000011';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000003', sequential_order = 3 WHERE id = 'a0000000-0000-4000-a000-000000000012';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000003', sequential_order = 4 WHERE id = 'a0000000-0000-4000-a000-000000000013';
+UPDATE problems SET module_id = 'b1000000-0000-4000-a000-000000000003', sequential_order = 5 WHERE id = 'a0000000-0000-4000-a000-000000000014';
 
 -- ── 10 Ranked Test Cases × 14 Problems = 140 Test Cases ──────────────────────
 -- difficulty_rank: 1 = simplest edge case, 10 = most complex/tricky

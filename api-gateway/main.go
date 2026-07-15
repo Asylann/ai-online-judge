@@ -101,6 +101,7 @@ func main() {
 	submissionRepo  := repository.NewSubmissionRepository(db)
 	adminRepo       := repository.NewAdminRepository(db)
 	leaderboardRepo := repository.NewLeaderboardRepository(rdb, db)
+	moduleRepo      := repository.NewModuleRepository(db)
 
 	// Service layer — orchestrates business logic + RabbitMQ publishing
 	authSvc        := service.NewAuthService(userRepo, cfg.JWTSecret)
@@ -108,6 +109,7 @@ func main() {
 	submissionSvc  := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
 	adminSvc       := service.NewAdminService(adminRepo, cfg.AITutorURL)
 	leaderboardSvc := service.NewLeaderboardService(leaderboardRepo)
+	moduleSvc      := service.NewModuleService(moduleRepo, problemRepo)
 
 	// Handler layer — HTTP parsing and response writing only
 	authHandler        := handler.NewAuthHandler(authSvc)
@@ -115,6 +117,7 @@ func main() {
 	submissionHandler  := handler.NewSubmissionHandler(submissionSvc, userRepo)
 	adminHandler       := handler.NewAdminHandler(adminSvc)
 	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)
+	moduleHandler      := handler.NewModuleHandler(moduleSvc)
 
 	// ── Step 4: Configure Gin and Register Routes ────────────────────────────────
 	r := gin.New()
@@ -132,7 +135,7 @@ func main() {
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Wire all route groups
-	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, leaderboardHandler, cfg.JWTSecret)
+	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, leaderboardHandler, moduleHandler, cfg.JWTSecret)
 
 
 	// ── Step 5: Start HTTP Server ────────────────────────────────────────────────
