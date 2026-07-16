@@ -25,8 +25,8 @@ export const HeroVisual: React.FC = () => {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="relative bg-slate-900 text-ivory-100 border-2 border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl overflow-hidden space-y-6"
       >
-        {/* Top Accent Gradient Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-amber-400" />
+        {/* Top Accent Solid Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
 
         {/* Sandbox & AST Monitor Header */}
         <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
@@ -131,7 +131,7 @@ export const HeroVisual: React.FC = () => {
         <motion.div
           animate={{ y: [-4, 4, -4] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="bg-gradient-to-r from-amber-500/15 via-slate-800/90 to-amber-500/15 border-2 border-amber-500/40 rounded-2xl p-4 shadow-lg space-y-2.5 relative"
+          className="bg-slate-950/95 border-2 border-amber-500/50 rounded-2xl p-4 shadow-lg space-y-2.5 relative"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">

@@ -196,9 +196,9 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                   isSelected
                     ? "ring-4 ring-amber-500/40 border-slate-900 shadow-lg bg-ivory-100"
                     : isActiveZPD
-                    ? "border-amber-500 bg-gradient-to-b from-amber-50/90 to-ivory-100 shadow-md hover:border-slate-900"
+                    ? "border-amber-500 bg-amber-100/90 shadow-md hover:border-slate-900"
                     : isCompleted
-                    ? "border-emerald-600/60 bg-emerald-50/40 hover:bg-ivory-100"
+                    ? "border-emerald-600/60 bg-emerald-50/60 hover:bg-ivory-100"
                     : "border-slate-900/20 bg-slate-900/80 text-slate-400 opacity-75 hover:opacity-90 backdrop-blur-sm"
                 }`}
               >
@@ -261,7 +261,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                       animate={{ width: `${(realm.completedCount / Math.max(1, realm.total)) * 100}%` }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
                       className={`h-full rounded-full ${
-                        isCompleted ? "bg-emerald-600" : isActiveZPD ? "bg-gradient-to-r from-amber-500 to-amber-400" : "bg-slate-600"
+                        isCompleted ? "bg-emerald-600" : isActiveZPD ? "bg-amber-500" : "bg-slate-600"
                       }`}
                     />
                   </div>

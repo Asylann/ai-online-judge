@@ -43,17 +43,15 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-ivory-100/90 backdrop-blur-xl border-b-2 border-slate-900/15 shadow-md transition-all duration-300">
-      {/* Animated Top Accent Glow Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-emerald-500 to-amber-400 animate-pulse" />
+    <header className="sticky top-0 z-50 w-full bg-ivory-100/95 backdrop-blur-md border-b-2 border-slate-900/15 shadow-sm transition-all duration-300">
+      {/* Clean Solid Top Bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-slate-900" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         {/* Brand Logo & Name */}
         <Link href="/" className="flex items-center space-x-3 group select-none shrink-0">
-          <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 border-amber-500/60 shadow-lg transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-3 overflow-hidden">
-            {/* SVG Logo rendered inside or Image */}
+          <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-md transition-transform duration-300 ease-out group-hover:scale-105 overflow-hidden">
             <img src="/logo.svg" alt="AI Online Judge Logo" className="w-8 h-8 object-contain z-10 drop-shadow" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
           </div>
 
@@ -62,8 +60,8 @@ export const Navbar: React.FC = () => {
               <span className="font-serif font-black text-lg sm:text-xl text-slate-900 tracking-tight group-hover:text-amber-800 transition-colors">
                 AI Online Judge
               </span>
-              <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-emerald-500/20 border border-amber-500/40 text-[9px] font-mono font-bold uppercase tracking-widest text-amber-900 shadow-2xs">
-                <Sparkles className="w-2.5 h-2.5 mr-1 text-amber-600 animate-spin" />
+              <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[9px] font-mono font-bold uppercase tracking-widest text-amber-300 shadow-2xs">
+                <Sparkles className="w-2.5 h-2.5 mr-1 text-amber-400 animate-spin" />
                 Socratic TA
               </span>
             </div>
@@ -75,7 +73,7 @@ export const Navbar: React.FC = () => {
           </div>
         </Link>
 
-        {/* Cohesive Navigation Buttons (Unified High-Tech Pill Style) */}
+        {/* Cohesive Navigation Buttons (Clean Solid Basic Style) */}
         <nav className="hidden lg:flex items-center space-x-2">
           {navItems.map((item) => {
             const active = isActive(item.path);
@@ -85,24 +83,21 @@ export const Navbar: React.FC = () => {
               <Link
                 key={item.label}
                 href={item.path}
-                className={`relative px-3.5 py-2 rounded-xl font-mono text-xs font-bold tracking-tight transition-all duration-300 flex items-center space-x-2 border select-none overflow-hidden group ${
+                className={`px-3.5 py-2 rounded-xl font-mono text-xs font-bold tracking-tight transition-all duration-200 flex items-center space-x-2 border select-none group ${
                   active
-                    ? "border-amber-600 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/20 text-slate-950 font-black shadow-sm ring-1 ring-amber-500/40"
-                    : "border-slate-900/15 bg-ivory-200/60 text-slate-700 hover:border-slate-900 hover:text-slate-950 hover:bg-white hover:-translate-y-0.5 shadow-2xs hover:shadow-md"
+                    ? "border-slate-900 bg-slate-900 text-ivory-100 shadow-sm"
+                    : "border-slate-900/15 bg-ivory-200/80 text-slate-700 hover:border-slate-900 hover:text-slate-950 hover:bg-white hover:-translate-y-0.5 shadow-2xs hover:shadow-sm"
                 }`}
               >
-                {/* Subtle Hover Sheen Animation */}
-                <span className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/15 to-amber-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out pointer-events-none" />
-
                 <IconComponent
                   className={`w-4 h-4 transition-transform duration-300 group-hover:scale-110 shrink-0 ${
-                    active ? "text-amber-700 font-black" : "text-slate-600 group-hover:text-amber-700"
+                    active ? "text-amber-400 font-bold" : "text-slate-600 group-hover:text-amber-700"
                   }`}
                 />
                 <span>{item.label}</span>
 
                 {active && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse ml-0.5" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" />
                 )}
               </Link>
             );
@@ -112,10 +107,10 @@ export const Navbar: React.FC = () => {
           {user?.role === "admin" && (
             <Link
               href="/admin/problems"
-              className={`relative px-3.5 py-2 rounded-xl font-mono text-xs font-black tracking-tight transition-all duration-300 flex items-center space-x-1.5 border overflow-hidden group shadow-sm ${
+              className={`px-3.5 py-2 rounded-xl font-mono text-xs font-black tracking-tight transition-all duration-200 flex items-center space-x-1.5 border group shadow-sm ${
                 router.pathname.startsWith("/admin")
                   ? "border-slate-900 bg-slate-900 text-amber-400 ring-2 ring-amber-400/50"
-                  : "border-amber-600/80 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 hover:bg-amber-300 hover:border-slate-900 hover:-translate-y-0.5 shadow-md"
+                  : "border-slate-900 bg-amber-500 text-slate-950 hover:bg-amber-400 hover:-translate-y-0.5 shadow-sm"
               }`}
             >
               <ShieldAlert className="w-4 h-4 animate-bounce shrink-0" />
@@ -124,7 +119,7 @@ export const Navbar: React.FC = () => {
           )}
         </nav>
 
-        {/* User Auth Actions (Matching Button Styles) */}
+        {/* User Auth Actions (Clean Solid Button Styles) */}
         <div className="flex items-center space-x-2.5 shrink-0">
           {isAuthenticated ? (
             <div className="flex items-center space-x-2 pl-3 border-l-2 border-slate-900/15">
@@ -159,9 +154,8 @@ export const Navbar: React.FC = () => {
 
               <Link
                 href="/register"
-                className="px-4 py-2 rounded-xl border-2 border-slate-900 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-ivory-100 hover:text-amber-300 text-xs font-mono font-black tracking-wider uppercase transition-all duration-300 hover:scale-[1.03] shadow-md hover:shadow-lg flex items-center space-x-1.5 group relative overflow-hidden"
+                className="px-4 py-2 rounded-xl border-2 border-slate-900 bg-slate-900 text-ivory-100 hover:bg-slate-800 hover:text-amber-300 text-xs font-mono font-black tracking-wider uppercase transition-all duration-200 hover:scale-[1.02] shadow-sm flex items-center space-x-1.5 group"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/20 to-amber-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out pointer-events-none" />
                 <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
                 <span>Register</span>
               </Link>
@@ -181,11 +175,11 @@ export const Navbar: React.FC = () => {
               href={item.path}
               className={`shrink-0 px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all flex items-center space-x-1.5 border ${
                 active
-                  ? "border-amber-600 bg-amber-500/25 text-slate-950 font-black shadow-xs"
-                  : "border-slate-900/15 bg-ivory-200/60 text-slate-700 hover:border-slate-900"
+                  ? "border-slate-900 bg-slate-900 text-ivory-100 shadow-xs"
+                  : "border-slate-900/15 bg-ivory-200/80 text-slate-700 hover:border-slate-900 hover:text-slate-950 hover:bg-white"
               }`}
             >
-              <IconComponent className={`w-3.5 h-3.5 ${active ? "text-amber-700" : "text-slate-500"}`} />
+              <IconComponent className={`w-3.5 h-3.5 ${active ? "text-amber-400 font-bold" : "text-slate-500"}`} />
               <span>{item.label}</span>
             </Link>
           );
