@@ -411,11 +411,9 @@ export default function ProblemWorkspacePage() {
           )}
         </div>
 
-        {/* Center Pane: Monaco Code Editor (5 cols when Virtual TA panel active, otherwise 8 cols) */}
+        {/* Center Pane: Monaco Code Editor (always 5 cols — right pane always rendered) */}
         <div
-          className={`${
-            hint || verdict === "Accepted" || verdict === "WA" ? "lg:col-span-5" : "lg:col-span-8"
-          } h-full p-4 flex flex-col bg-slate-950 transition-all duration-300`}
+          className="lg:col-span-5 h-full p-4 flex flex-col bg-slate-950 transition-all duration-300"
         >
           <CodeEditor
             code={code}

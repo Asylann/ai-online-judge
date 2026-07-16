@@ -121,7 +121,7 @@ func main() {
 	authHandler        := handler.NewAuthHandler(authSvc)
 	problemHandler     := handler.NewProblemHandler(problemSvc, dailyChallengeSvc)
 	submissionHandler  := handler.NewSubmissionHandler(submissionSvc, userRepo)
-	adminHandler       := handler.NewAdminHandler(adminSvc)
+	adminHandler       := handler.NewAdminHandler(adminSvc, moduleRepo)
 	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)
 	moduleHandler      := handler.NewModuleHandler(moduleSvc)
 

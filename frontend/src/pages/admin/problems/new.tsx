@@ -27,6 +27,12 @@ interface TestCaseFormItem {
   is_sample?: boolean;
 }
 
+interface ModuleOption {
+  id: string;
+  title: string;
+  sequential_order: number;
+}
+
 export default function AdminProblemNewPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -42,6 +48,10 @@ export default function AdminProblemNewPage() {
   const [sampleStdin, setSampleStdin] = useState<string>("5\n1 2 3 4 5\n");
   const [sampleExpectedOutput, setSampleExpectedOutput] = useState<string>("15\n");
 
+  const [modules, setModules] = useState<ModuleOption[]>([]);
+  const [selectedModuleID, setSelectedModuleID] = useState<string>("");
+  const [sequentialOrder, setSequentialOrder] = useState<number>(1);
+
   const [testCases, setTestCases] = useState<TestCaseFormItem[]>([
     {
       stdin: "5\n1 2 3 4 5\n",
@@ -55,6 +65,20 @@ export default function AdminProblemNewPage() {
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Fetch available modules when auth is ready
+  useEffect(() => {
+    if (authReady) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      axios
+        .get(`${API_URL}/admin/modules`, { headers })
+        .then((res) => {
+          setModules(res.data?.modules || []);
+        })
+        .catch((err) => console.error("Failed to fetch modules:", err));
+    }
+  }, [authReady]);
 
   // Load problem details if query string has ?id=...
   useEffect(() => {
@@ -72,6 +96,12 @@ export default function AdminProblemNewPage() {
             setTagsInput((p.tags || []).join(", "));
             setSampleStdin(p.stdin || "");
             setSampleExpectedOutput(p.expected_output || "");
+            if (p.module_id) {
+              setSelectedModuleID(p.module_id);
+            }
+            if (p.sequential_order) {
+              setSequentialOrder(p.sequential_order);
+            }
             if (p.test_cases && Array.isArray(p.test_cases) && p.test_cases.length > 0) {
               setTestCases(p.test_cases);
             }
@@ -185,7 +215,7 @@ export default function AdminProblemNewPage() {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const payload = {
+    const payload: any = {
       title,
       description,
       difficulty,
@@ -195,7 +225,11 @@ export default function AdminProblemNewPage() {
       stdin: sampleStdin,
       expected_output: sampleExpectedOutput,
       test_cases: testCases,
+      sequential_order: Number(sequentialOrder) || 1,
     };
+    if (selectedModuleID) {
+      payload.module_id = selectedModuleID;
+    }
 
     try {
       if (isEditing && typeof id === "string") {
@@ -346,6 +380,45 @@ export default function AdminProblemNewPage() {
                 placeholder="e.g. arrays, dynamic-programming, graphs"
                 className="w-full bg-ivory-100 border border-slate-900/20 rounded-md px-3.5 py-2 text-sm font-mono text-slate-900 focus:outline-none focus:border-slate-900"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-900/10">
+            <div className="md:col-span-2 space-y-2">
+              <label className="block text-xs font-mono uppercase tracking-wider text-slate-700 font-semibold">
+                Curriculum Module Assignment (Learning Path)
+              </label>
+              <select
+                value={selectedModuleID}
+                onChange={(e) => setSelectedModuleID(e.target.value)}
+                className="w-full bg-ivory-100 border border-slate-900/20 rounded-md px-3.5 py-2 text-sm font-serif text-slate-900 focus:outline-none focus:border-slate-900 transition-colors"
+              >
+                <option value="">-- Standalone / Unassigned to Module --</option>
+                {modules.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    #{m.sequential_order} - {m.title}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[10px] font-mono text-slate-500 block">
+                Assigning a module locks this problem until the preceding problem in sequential order is solved.
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-mono uppercase tracking-wider text-slate-700 font-semibold">
+                Position in Module (Order #)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={sequentialOrder}
+                onChange={(e) => setSequentialOrder(Number(e.target.value))}
+                className="w-full bg-ivory-100 border border-slate-900/20 rounded-md px-3.5 py-2 text-sm font-mono text-slate-900 focus:outline-none focus:border-slate-900"
+              />
+              <span className="text-[10px] font-mono text-slate-500 block">
+                Order within the module (e.g. 1st, 2nd, 3rd problem)
+              </span>
             </div>
           </div>
         </div>

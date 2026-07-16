@@ -94,11 +94,11 @@ func (r *pgAdminRepository) CreateProblemWithTestCases(ctx context.Context, p *m
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO problems (title, description, stdin, expected_output, difficulty_score)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO problems (title, description, stdin, expected_output, difficulty_score, module_id, sequential_order)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at`
 
-	err = tx.QueryRow(ctx, query, p.Title, p.Description, p.Stdin, p.ExpectedOutput, p.DifficultyScore).Scan(&p.ID, &p.CreatedAt)
+	err = tx.QueryRow(ctx, query, p.Title, p.Description, p.Stdin, p.ExpectedOutput, p.DifficultyScore, p.ModuleID, p.SequentialOrder).Scan(&p.ID, &p.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("insert problem: %w", err)
 	}
@@ -157,11 +157,12 @@ func (r *pgAdminRepository) UpdateProblemWithTestCases(ctx context.Context, id u
 
 	query := `
 		UPDATE problems
-		SET title = $1, description = $2, stdin = $3, expected_output = $4, difficulty_score = $5
-		WHERE id = $6
+		SET title = $1, description = $2, stdin = $3, expected_output = $4, difficulty_score = $5,
+		    module_id = $6, sequential_order = $7
+		WHERE id = $8
 		RETURNING id, title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at`
 
-	err = tx.QueryRow(ctx, query, p.Title, p.Description, p.Stdin, p.ExpectedOutput, p.DifficultyScore, id).Scan(
+	err = tx.QueryRow(ctx, query, p.Title, p.Description, p.Stdin, p.ExpectedOutput, p.DifficultyScore, p.ModuleID, p.SequentialOrder, id).Scan(
 		&p.ID, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.DifficultyScore, &p.CreatedAt,
 	)
 	if err != nil {

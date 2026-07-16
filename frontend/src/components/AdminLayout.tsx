@@ -23,6 +23,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   // Navigation items for admin sidebar
   const navItems = [
     { name: "Problems", href: "/admin/problems", icon: FileCode },
+    { name: "Modules", href: "/admin/modules", icon: ListChecks },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Submissions", href: "/admin/submissions", icon: ListChecks },
     { name: "AST Integrity", href: "/admin/integrity", icon: ShieldAlert },
@@ -100,13 +101,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 );
               })}
 
-              <div className="pt-4 mt-4 border-t border-slate-900/10">
+              <div className="pt-4 mt-4 border-t border-slate-900/10 space-y-2">
                 <Link
                   href="/admin/problems/new"
                   className="flex items-center justify-center space-x-2 w-full bg-amber-900/90 hover:bg-amber-900 text-ivory-100 px-3.5 py-2.5 rounded-md text-xs font-semibold tracking-wide transition-all duration-200 hover:scale-[1.01]"
                 >
                   <PlusCircle className="w-4 h-4 text-amber-300" />
                   <span>Create Problem</span>
+                </Link>
+                <Link
+                  href="/admin/modules"
+                  className="flex items-center justify-center space-x-2 w-full bg-slate-800 hover:bg-slate-700 text-ivory-100 px-3.5 py-2 rounded-md text-xs font-semibold tracking-wide transition-all duration-200 hover:scale-[1.01]"
+                >
+                  <PlusCircle className="w-4 h-4 text-amber-300" />
+                  <span>Create/Manage Modules</span>
                 </Link>
               </div>
             </nav>

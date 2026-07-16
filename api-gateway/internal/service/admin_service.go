@@ -25,8 +25,8 @@ type AdminService interface {
 	ListUsers(ctx context.Context) ([]models.User, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteSubmission(ctx context.Context, id uuid.UUID) error
-	CreateProblem(ctx context.Context, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase) (*models.Problem, error)
-	UpdateProblem(ctx context.Context, id uuid.UUID, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase) (*models.Problem, error)
+	CreateProblem(ctx context.Context, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase, moduleID *uuid.UUID, sequentialOrder int) (*models.Problem, error)
+	UpdateProblem(ctx context.Context, id uuid.UUID, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase, moduleID *uuid.UUID, sequentialOrder int) (*models.Problem, error)
 	DeleteProblem(ctx context.Context, id uuid.UUID) error
 	GenerateTestCases(ctx context.Context, payload []byte) ([]byte, error)
 	CheckSubmissionSimilarity(ctx context.Context, problemID uuid.UUID) ([]models.SubmissionSimilarityPair, error)
@@ -59,7 +59,7 @@ func (s *adminService) DeleteSubmission(ctx context.Context, id uuid.UUID) error
 	return s.adminRepo.DeleteSubmission(ctx, id)
 }
 
-func (s *adminService) CreateProblem(ctx context.Context, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase) (*models.Problem, error) {
+func (s *adminService) CreateProblem(ctx context.Context, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase, moduleID *uuid.UUID, sequentialOrder int) (*models.Problem, error) {
 	if title == "" || description == "" {
 		return nil, fmt.Errorf("title and description are required")
 	}
@@ -88,6 +88,8 @@ func (s *adminService) CreateProblem(ctx context.Context, title, description, di
 		DifficultyScore: diffScore,
 		Stdin:           sampleStdin,
 		ExpectedOutput:  sampleOutput,
+		ModuleID:        moduleID,
+		SequentialOrder: sequentialOrder,
 	}
 
 	// Ensure at least sample test case exists if testCases is empty
@@ -103,7 +105,7 @@ func (s *adminService) CreateProblem(ctx context.Context, title, description, di
 	return s.adminRepo.CreateProblemWithTestCases(ctx, p, testCases)
 }
 
-func (s *adminService) UpdateProblem(ctx context.Context, id uuid.UUID, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase) (*models.Problem, error) {
+func (s *adminService) UpdateProblem(ctx context.Context, id uuid.UUID, title, description, difficulty string, timeLimit, memoryLimit int, tags []string, sampleStdin, sampleOutput string, testCases []models.TestCase, moduleID *uuid.UUID, sequentialOrder int) (*models.Problem, error) {
 	diffScore := 1.5
 	if difficulty == "medium" {
 		diffScore = 2.5
@@ -122,6 +124,8 @@ func (s *adminService) UpdateProblem(ctx context.Context, id uuid.UUID, title, d
 		DifficultyScore: diffScore,
 		Stdin:           sampleStdin,
 		ExpectedOutput:  sampleOutput,
+		ModuleID:        moduleID,
+		SequentialOrder: sequentialOrder,
 	}
 	return s.adminRepo.UpdateProblemWithTestCases(ctx, id, p, testCases)
 }

@@ -14,6 +14,8 @@ import (
 // ModuleRepository defines persistence for curriculum modules and problem progression.
 type ModuleRepository interface {
 	ListModules(ctx context.Context) ([]models.Module, error)
+	CreateModule(ctx context.Context, title, description string, order int) (*models.Module, error)
+	DeleteModule(ctx context.Context, id uuid.UUID) error
 	GetAcceptedProblemIDsByUserID(ctx context.Context, userID uuid.UUID) (map[uuid.UUID]bool, error)
 }
 
@@ -51,6 +53,42 @@ func (r *pgModuleRepository) ListModules(ctx context.Context) ([]models.Module, 
 		return nil, err
 	}
 	return modules, nil
+}
+
+// CreateModule inserts a new curriculum module.
+func (r *pgModuleRepository) CreateModule(ctx context.Context, title, description string, order int) (*models.Module, error) {
+	query := `
+		INSERT INTO modules (title, description, sequential_order)
+		VALUES ($1, $2, $3)
+		RETURNING id, title, description, sequential_order, created_at`
+	var m models.Module
+	err := r.db.QueryRow(ctx, query, title, description, order).Scan(
+		&m.ID, &m.Title, &m.Description, &m.SequentialOrder, &m.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("module_repository.CreateModule: %w", err)
+	}
+	return &m, nil
+}
+
+// DeleteModule deletes a module and un-assigns its problems (sets module_id = NULL).
+func (r *pgModuleRepository) DeleteModule(ctx context.Context, id uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `UPDATE problems SET module_id = NULL WHERE module_id = $1`, id); err != nil {
+		return fmt.Errorf("unlink problems: %w", err)
+	}
+	res, err := tx.Exec(ctx, `DELETE FROM modules WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("delete module: %w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("module not found")
+	}
+	return tx.Commit(ctx)
 }
 
 // GetAcceptedProblemIDsByUserID returns a set of all problem IDs where the user has an "Accepted" verdict.
