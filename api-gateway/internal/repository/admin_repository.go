@@ -93,6 +93,18 @@ func (r *pgAdminRepository) CreateProblemWithTestCases(ctx context.Context, p *m
 	}
 	defer tx.Rollback(ctx)
 
+	if p.ModuleID != nil && *p.ModuleID != uuid.Nil && p.SequentialOrder > 0 {
+		_, err := tx.Exec(ctx, `
+			UPDATE problems
+			SET sequential_order = sequential_order + 1
+			WHERE module_id = $1 AND sequential_order >= $2`,
+			*p.ModuleID, p.SequentialOrder,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("shift module positions on create: %w", err)
+		}
+	}
+
 	query := `
 		INSERT INTO problems (title, description, stdin, expected_output, difficulty_score, module_id, sequential_order)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -154,6 +166,18 @@ func (r *pgAdminRepository) UpdateProblemWithTestCases(ctx context.Context, id u
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
+
+	if p.ModuleID != nil && *p.ModuleID != uuid.Nil && p.SequentialOrder > 0 {
+		_, err := tx.Exec(ctx, `
+			UPDATE problems
+			SET sequential_order = sequential_order + 1
+			WHERE module_id = $1 AND sequential_order >= $2 AND id != $3`,
+			*p.ModuleID, p.SequentialOrder, id,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("shift module positions on update: %w", err)
+		}
+	}
 
 	query := `
 		UPDATE problems

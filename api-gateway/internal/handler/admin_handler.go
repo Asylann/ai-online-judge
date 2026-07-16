@@ -182,6 +182,52 @@ func (h *AdminHandler) DeleteModule(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "module deleted and problems un-assigned"})
 }
 
+// UpdateModule handles PUT /api/v1/admin/modules/:id
+func (h *AdminHandler) UpdateModule(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid module ID"})
+		return
+	}
+	var req createModuleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.SequentialOrder <= 0 {
+		req.SequentialOrder = 1
+	}
+	m, err := h.moduleRepo.UpdateModule(c.Request.Context(), id, req.Title, req.Description, req.SequentialOrder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"module": m})
+}
+
+type reorderProblemsRequest struct {
+	ProblemIDs []uuid.UUID `json:"problem_ids" binding:"required"`
+}
+
+// ReorderModuleProblems handles PUT /api/v1/admin/modules/:id/reorder
+func (h *AdminHandler) ReorderModuleProblems(c *gin.Context) {
+	moduleID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid module ID"})
+		return
+	}
+	var req reorderProblemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.moduleRepo.ReorderModuleProblems(c.Request.Context(), moduleID, req.ProblemIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "problems reordered successfully"})
+}
+
 // DeleteProblem handles DELETE /api/v1/admin/problems/:id
 func (h *AdminHandler) DeleteProblem(c *gin.Context) {
 	idStr := c.Param("id")
