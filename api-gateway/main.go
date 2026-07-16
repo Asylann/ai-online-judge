@@ -14,6 +14,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -28,7 +31,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
 	// ── Step 1: Load Configuration ──────────────────────────────────────────────
 	cfg, err := config.Load()
@@ -104,16 +108,18 @@ func main() {
 	moduleRepo      := repository.NewModuleRepository(db)
 
 	// Service layer — orchestrates business logic + RabbitMQ publishing
-	authSvc        := service.NewAuthService(userRepo, cfg.JWTSecret)
-	problemSvc     := service.NewProblemService(problemRepo)
-	submissionSvc  := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
-	adminSvc       := service.NewAdminService(adminRepo, cfg.AITutorURL)
-	leaderboardSvc := service.NewLeaderboardService(leaderboardRepo)
-	moduleSvc      := service.NewModuleService(moduleRepo, problemRepo)
+	authSvc           := service.NewAuthService(userRepo, cfg.JWTSecret)
+	problemSvc        := service.NewProblemService(problemRepo)
+	submissionSvc     := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
+	adminSvc          := service.NewAdminService(adminRepo, cfg.AITutorURL)
+	leaderboardSvc    := service.NewLeaderboardService(leaderboardRepo)
+	moduleSvc         := service.NewModuleService(moduleRepo, problemRepo)
+	dailyChallengeSvc := service.NewDailyChallengeService(problemRepo, rdb)
+	dailyChallengeSvc.StartDailyTicker(ctx)
 
 	// Handler layer — HTTP parsing and response writing only
 	authHandler        := handler.NewAuthHandler(authSvc)
-	problemHandler     := handler.NewProblemHandler(problemSvc)
+	problemHandler     := handler.NewProblemHandler(problemSvc, dailyChallengeSvc)
 	submissionHandler  := handler.NewSubmissionHandler(submissionSvc, userRepo)
 	adminHandler       := handler.NewAdminHandler(adminSvc)
 	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)

@@ -22,22 +22,22 @@ help:
 
 up:
 	@echo "Launching AI Online Judge cluster (Go, Python, Next.js, PostgreSQL, Redis, RabbitMQ)..."
-	docker-compose up --build -d
+	docker-compose -f deployments/docker-compose.yml up --build -d
 	@echo "Cluster operational! Access dashboard at http://localhost:3000"
 
 down:
 	@echo "Tearing down cluster and cleaning up local volumes..."
-	docker-compose down -v
+	docker-compose -f deployments/docker-compose.yml down -v
 	@echo "Cluster shutdown complete."
 
 logs:
-	docker-compose logs -f
+	docker-compose -f deployments/docker-compose.yml logs -f
 
 ps:
-	docker-compose ps
+	docker-compose -f deployments/docker-compose.yml ps
 
 restart:
-	docker-compose restart
+	docker-compose -f deployments/docker-compose.yml restart
 
 test:
 	@echo "Running Go unit & integration tests..."

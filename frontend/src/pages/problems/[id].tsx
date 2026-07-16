@@ -5,7 +5,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { CodeEditor } from "@/components/CodeEditor";
 import { VirtualTAPanel, SocraticHint } from "@/components/VirtualTAPanel";
-import { ArrowLeft, Play, Cpu, CheckCircle2, AlertTriangle, Layers, BookOpen } from "lucide-react";
+import { ArrowLeft, Play, Cpu, CheckCircle2, AlertTriangle, Layers, BookOpen, Sparkles, Award } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
@@ -126,16 +126,16 @@ export default function ProblemWorkspacePage() {
             setTestsTotal(tt);
           }
           if (newStatus !== "Pending" && newStatus !== "In Queue" && newStatus !== "Processing") {
-            // Verdict finalized inside Judge0 or local fast evaluator
+            setSubmitting(false);
+            setActiveSubmissionId(null);
             if (newStatus === "Accepted") {
-              setSubmitting(false);
-              setActiveSubmissionId(null);
               fetchRecommendation();
             } else {
-              setTimeout(() => {
-                setSubmitting(false);
-                setActiveSubmissionId(null);
-              }, 1500);
+              setHint((prev) => prev || {
+                hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o...`,
+                target_line: null,
+                cognitive_effort_index: 2.5,
+              });
             }
           }
         } else if (msg.type === "ai_hint") {
@@ -252,7 +252,10 @@ export default function ProblemWorkspacePage() {
         code_base64: codeBase64,
       };
 
-      const response = await axios.post(`${API_URL}/submissions`, payload);
+      const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const response = await axios.post(`${API_URL}/submissions`, payload, { headers });
       const submissionData = response.data;
 
       if (submissionData) {
@@ -264,7 +267,9 @@ export default function ProblemWorkspacePage() {
 
         if (finalStatus === "Pending" || finalStatus === "In Queue" || finalStatus === "Processing") {
           setVerdict("Evaluating inside Sandbox (Isolate cgroup)...");
-        } else if (!wsConnected) {
+        } else {
+          setSubmitting(false);
+          setActiveSubmissionId(null);
           if (finalStatus !== "Accepted") {
             setHint({
               hint_text: submissionData.ai_hint_text || `Virtual TA (Socratic Hint): Your code returned status ${finalStatus}. Notice any structural or runtime deviation?`,
@@ -274,15 +279,10 @@ export default function ProblemWorkspacePage() {
           } else {
             fetchRecommendation();
           }
-          setSubmitting(false);
-          setActiveSubmissionId(null);
-        } else if (finalStatus === "Accepted") {
-          setSubmitting(false);
-          setActiveSubmissionId(null);
-          fetchRecommendation();
         }
       }
     } catch (err: any) {
+      setVerdict(null);
       setErrorMsg(
         err.response?.data?.error || "Execution failed inside sandbox. Please check API Gateway connectivity."
       );
@@ -489,12 +489,28 @@ export default function ProblemWorkspacePage() {
                           />
                         ))}
                       </div>
-                      {testsPassed < testsTotal && (
+                      {testsPassed === testsTotal || verdict === "Accepted" ? (
+                        <div className="mt-4 p-4 rounded-xl bg-emerald-950/10 border border-emerald-800/30 text-emerald-950 space-y-2">
+                          <div className="flex items-center space-x-2 font-serif font-semibold text-sm text-emerald-900">
+                            <Award className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Flawless Algorithmic Execution!</span>
+                          </div>
+                          <p className="text-xs font-sans leading-relaxed text-emerald-800/95">
+                            Congratulations! Your code verified 100% of all test cases with optimal structural invariants inside the secure Linux cgroup sandbox.
+                          </p>
+                          <div className="pt-2 border-t border-emerald-800/15 flex items-center justify-between text-[11px] font-mono text-emerald-700">
+                            <span className="flex items-center">
+                              <Sparkles className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                              Points logged to Global Leaderboard
+                            </span>
+                          </div>
+                        </div>
+                      ) : testsPassed < testsTotal ? (
                         <p className="text-[10px] text-slate-400 font-sans mt-1.5 leading-relaxed">
                           {testsTotal - testsPassed} hidden test case{testsTotal - testsPassed !== 1 ? "s" : ""} failed.
                           Virtual TA will guide you with a Socratic hint.
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   )}
                 </div>

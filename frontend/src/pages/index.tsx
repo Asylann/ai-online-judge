@@ -4,6 +4,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { EffortDashboard, SubmissionMetric } from "@/components/EffortDashboard";
 import { Leaderboard } from "@/components/Leaderboard";
+import { ChallengeOfTheDay } from "@/components/ChallengeOfTheDay";
 import { ArrowUpRight, BookOpen, Sparkles, Activity, Code, Award, Search, Filter } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -227,6 +228,9 @@ export default function DashboardPage() {
           {HERO_SUBTEXT}
         </motion.p>
       </section>
+
+      {/* Challenge of the Day (24h Featured Banner) */}
+      <ChallengeOfTheDay />
 
       {/* Algorithmic Problems List */}
       <section className="space-y-6">

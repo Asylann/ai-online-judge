@@ -16,6 +16,7 @@ import (
 type ProblemRepository interface {
 	ListProblems(ctx context.Context) ([]models.Problem, error)
 	GetProblemByID(ctx context.Context, id uuid.UUID) (*models.Problem, error)
+	GetRandomProblem(ctx context.Context) (*models.Problem, error)
 	GetRecommendationZPD(ctx context.Context, userID uuid.UUID, currentProblemID uuid.UUID) (*models.Problem, error)
 }
 
@@ -137,6 +138,37 @@ func (r *pgProblemRepository) GetProblemByID(ctx context.Context, id uuid.UUID) 
 	return &p, nil
 }
 
+// GetRandomProblem fetches a random problem from PostgreSQL for the Daily Challenge.
+func (r *pgProblemRepository) GetRandomProblem(ctx context.Context) (*models.Problem, error) {
+	query := `
+		SELECT id, module_id, COALESCE(sequential_order, 1), title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at
+		FROM problems
+		ORDER BY RANDOM()
+		LIMIT 1`
+
+	var p models.Problem
+	err := r.db.QueryRow(ctx, query).Scan(
+		&p.ID, &p.ModuleID, &p.SequentialOrder, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.ASTComplexity, &p.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("problem_repository.GetRandomProblem: %w", err)
+	}
+	p.DifficultyScore = p.ASTComplexity
+	if p.DifficultyScore < 2.0 {
+		p.Difficulty = "easy"
+	} else if p.DifficultyScore < 3.5 {
+		p.Difficulty = "medium"
+	} else {
+		p.Difficulty = "hard"
+	}
+	p.TimeLimit = 2000
+	p.MemoryLimit = 128000
+	if tcs, _ := r.fetchTestCases(ctx, p.ID); tcs != nil {
+		p.TestCases = tcs
+	}
+	return &p, nil
+}
+
 // GetRecommendationZPD computes a Content-Based Recommendation System (CBRS) target inside the
 // student's Zone of Proximal Development based on their cognitive_effort_index on the current problem.
 func (r *pgProblemRepository) GetRecommendationZPD(ctx context.Context, userID uuid.UUID, currentProblemID uuid.UUID) (*models.Problem, error) {
@@ -238,6 +270,7 @@ func (r *pgSubmissionRepository) GetSubmissionByID(ctx context.Context, id uuid.
 		SELECT
 			id, user_id, problem_id, code_base64, language, status,
 			COALESCE(tests_passed, 0), COALESCE(tests_total, 0),
+			failed_test_stdin, failed_test_expected_output, failed_test_actual_output, error_output,
 			execution_time_ms, memory_kb,
 			ast_complexity_score, cognitive_effort_index,
 			ai_hint_given, ai_hint_text,
@@ -249,6 +282,7 @@ func (r *pgSubmissionRepository) GetSubmissionByID(ctx context.Context, id uuid.
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&s.ID, &s.UserID, &s.ProblemID, &s.CodeBase64, &s.Language, &s.Status,
 		&s.TestsPassed, &s.TestsTotal,
+		&s.FailedTestStdin, &s.FailedTestExpectedOutput, &s.FailedTestActualOutput, &s.ErrorOutput,
 		&s.ExecutionTimeMs, &s.MemoryKB,
 		&s.ASTComplexityScore, &s.CognitiveEffortIndex,
 		&s.AIHintGiven, &s.AIHintText,

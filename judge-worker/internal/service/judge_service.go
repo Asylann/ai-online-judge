@@ -192,6 +192,8 @@ func (s *judgeService) Execute(ctx context.Context, task models.JudgeTask) error
 	finalVerdict := "Accepted"
 	failedStdin := ""
 	failedExpected := ""
+	failedActual := ""
+	failedError := ""
 	var maxExecTimeMs int
 	var maxMemoryKB int
 
@@ -257,6 +259,17 @@ func (s *judgeService) Execute(ctx context.Context, task models.JudgeTask) error
 			if failedStdin == "" {
 				failedStdin = tc.Stdin
 				failedExpected = tc.ExpectedOutput
+				if result != nil {
+					failedActual = strings.TrimSpace(result.Stdout)
+					errParts := []string{}
+					if strings.TrimSpace(result.CompileOutput) != "" {
+						errParts = append(errParts, strings.TrimSpace(result.CompileOutput))
+					}
+					if strings.TrimSpace(result.Stderr) != "" {
+						errParts = append(errParts, strings.TrimSpace(result.Stderr))
+					}
+					failedError = strings.Join(errParts, "\n")
+				}
 			}
 			// Record the most severe non-Accepted verdict (CE > TLE/MLE > WA > RE)
 			if shouldUpgradeVerdict(finalVerdict, verdict) {
@@ -275,6 +288,8 @@ func (s *judgeService) Execute(ctx context.Context, task models.JudgeTask) error
 		finalVerdict = "Accepted"
 		failedStdin = ""
 		failedExpected = ""
+		failedActual = ""
+		failedError = ""
 	}
 
 	log.Printf("[judge-worker] Executor: submission %s → final verdict=%s, score=%d/%d",
@@ -290,6 +305,8 @@ func (s *judgeService) Execute(ctx context.Context, task models.JudgeTask) error
 		TestsTotal:               total,
 		FailedTestStdin:          failedStdin,
 		FailedTestExpectedOutput: failedExpected,
+		FailedTestActualOutput:   failedActual,
+		ErrorOutput:              failedError,
 		ExecutionTimeMs:          maxExecTimeMs,
 		MemoryKB:                 maxMemoryKB,
 	}); err != nil {
@@ -539,6 +556,8 @@ func (s *judgeService) failSubmission(ctx context.Context, task models.JudgeTask
 		TestsTotal:               0,
 		FailedTestStdin:          reason,
 		FailedTestExpectedOutput: "",
+		FailedTestActualOutput:   "",
+		ErrorOutput:              reason,
 		ExecutionTimeMs:          0,
 		MemoryKB:                 0,
 	})

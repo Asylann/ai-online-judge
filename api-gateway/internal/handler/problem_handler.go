@@ -32,12 +32,13 @@ func OTELSubmissionMiddleware() gin.HandlerFunc {
 
 // ProblemHandler handles HTTP routes for the problems domain.
 type ProblemHandler struct {
-	problemSvc service.ProblemService
+	problemSvc        service.ProblemService
+	dailyChallengeSvc service.DailyChallengeService
 }
 
 // NewProblemHandler constructs a ProblemHandler. Called from main.go (DI root).
-func NewProblemHandler(problemSvc service.ProblemService) *ProblemHandler {
-	return &ProblemHandler{problemSvc: problemSvc}
+func NewProblemHandler(problemSvc service.ProblemService, dailyChallengeSvc service.DailyChallengeService) *ProblemHandler {
+	return &ProblemHandler{problemSvc: problemSvc, dailyChallengeSvc: dailyChallengeSvc}
 }
 
 // ListProblems handles GET /api/v1/problems
@@ -55,6 +56,21 @@ func (h *ProblemHandler) ListProblems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"problems": problems, "count": len(problems)})
+}
+
+// GetDailyChallenge handles GET /api/v1/problems/daily
+// Returns the currently featured 24h problem from Redis cache or PostgreSQL fallback.
+func (h *ProblemHandler) GetDailyChallenge(c *gin.Context) {
+	if h.dailyChallengeSvc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "daily challenge service not configured"})
+		return
+	}
+	problem, err := h.dailyChallengeSvc.GetDailyChallengeProblem(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch daily challenge"})
+		return
+	}
+	c.JSON(http.StatusOK, problem)
 }
 
 // GetProblem handles GET /api/v1/problems/:id
@@ -288,6 +304,7 @@ func RegisterRoutes(
 	for _, prefix := range []string{"/api/v1/problems", "/api/problems", "/problems"} {
 		g := r.Group(prefix)
 		g.GET("", problemH.ListProblems)
+		g.GET("/daily", problemH.GetDailyChallenge)
 		g.GET("/:id", problemH.GetProblem)
 		g.GET("/:id/recommendation", RequireAuth(jwtSecret), problemH.GetRecommendation)
 	}

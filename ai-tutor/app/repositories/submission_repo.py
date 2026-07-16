@@ -37,6 +37,8 @@ class SubmissionRepository:
                 s.tests_total,
                 s.failed_test_stdin,
                 s.failed_test_expected_output,
+                s.failed_test_actual_output,
+                s.error_output,
                 s.ast_complexity_score,
                 s.ast_snapshot,
                 s.ai_hint_given,

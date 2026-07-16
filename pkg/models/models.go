@@ -91,6 +91,8 @@ type Submission struct {
 	// Failure context for Virtual TA Socratic hint generation
 	FailedTestStdin          *string   `json:"failed_test_stdin" db:"failed_test_stdin"`
 	FailedTestExpectedOutput *string   `json:"failed_test_expected_output" db:"failed_test_expected_output"`
+	FailedTestActualOutput   *string   `json:"failed_test_actual_output" db:"failed_test_actual_output"`
+	ErrorOutput              *string   `json:"error_output" db:"error_output"`
 	// effort_based_metrics
 	ExecutionTimeMs          *int      `json:"execution_time_ms" db:"execution_time_ms"`
 	MemoryKB                 *int      `json:"memory_kb" db:"memory_kb"`

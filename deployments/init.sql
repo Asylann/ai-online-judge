@@ -60,8 +60,21 @@ CREATE TABLE IF NOT EXISTS test_cases (
     expected_output  TEXT        NOT NULL,
     difficulty_rank  INT         NOT NULL DEFAULT 1, -- 1=easiest, 10=hardest
     is_sample        BOOLEAN     DEFAULT FALSE,       -- TRUE = also shown in problem sidebar
-    created_at       TIMESTAMPTZ DEFAULT now()
+    created_at       TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(problem_id, difficulty_rank)
 );
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'test_cases_problem_id_difficulty_rank_key'
+    ) THEN
+        ALTER TABLE test_cases ADD CONSTRAINT test_cases_problem_id_difficulty_rank_key UNIQUE (problem_id, difficulty_rank);
+    END IF;
+EXCEPTION
+    WHEN duplicate_table THEN null;
+    WHEN others THEN null;
+END $$;
 
 -- ── submissions (core EDM table — effort-based, not binary) ───────────────────
 -- Every submission attempt is recorded. Fields are populated progressively:
@@ -87,6 +100,8 @@ CREATE TABLE IF NOT EXISTS submissions (
   -- Failure context for Virtual TA Socratic hint generation
   failed_test_stdin           TEXT,                   -- stdin of the first test case that failed
   failed_test_expected_output TEXT,                   -- expected output of the first test that failed
+  failed_test_actual_output   TEXT,                   -- actual stdout of the failing test
+  error_output                TEXT,                   -- stderr or compiler error when code fails
   -- effort_based_metrics (Executor measurements inside isolate sandbox)
   execution_time_ms           INT,                    -- CPU time measured by the Executor
   memory_kb                   INT,                    -- Peak RAM measured by the Executor
@@ -105,7 +120,22 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tests_passed INT DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tests_total INT DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_stdin TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_expected_output TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS failed_test_actual_output TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS error_output TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'student';
+
+CREATE TABLE IF NOT EXISTS modules (
+    id               UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title            VARCHAR(255) NOT NULL,
+    description      TEXT         DEFAULT '',
+    sequential_order INT          NOT NULL DEFAULT 1,
+    created_at       TIMESTAMPTZ  DEFAULT now()
+);
+
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS module_id UUID REFERENCES modules(id) ON DELETE SET NULL;
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS sequential_order INT DEFAULT 1;
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS stdin TEXT DEFAULT '';
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS expected_output TEXT DEFAULT '';
 
 
 -- ── Canonical Curriculum Modules ──────────────────────────────────────────────
@@ -464,4 +494,7 @@ INSERT INTO test_cases (problem_id, stdin, expected_output, difficulty_rank, is_
 ('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'7\n2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647', '15032385529', 8, FALSE),
 ('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'10\n1 1 1 1 1 1 1 1 1 1',                                                    '10',          9, FALSE),
 ('a8f9a993-79ee-4e3b-ac66-f34ca8e70b12', E'10\n100 200 300 400 500 600 700 800 900 1000',                              '5500',       10, FALSE)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (problem_id, difficulty_rank) DO UPDATE SET
+  stdin = EXCLUDED.stdin,
+  expected_output = EXCLUDED.expected_output,
+  is_sample = EXCLUDED.is_sample;

@@ -22,6 +22,8 @@ type VerdictUpdate struct {
 	TestsTotal               int     // total test cases attempted
 	FailedTestStdin          string  // stdin of the first failing test case (for Virtual TA context)
 	FailedTestExpectedOutput string  // expected output of the first failing test case
+	FailedTestActualOutput   string  // actual stdout produced by the failing test case
+	ErrorOutput              string  // stderr or compile error produced
 	ExecutionTimeMs          int     // CPU time from last test case run (effort_based_metric)
 	MemoryKB                 int     // Peak RAM from last test case run (effort_based_metric)
 }
@@ -76,8 +78,10 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 			tests_total                 = $4,
 			failed_test_stdin           = NULLIF($5, ''),
 			failed_test_expected_output = NULLIF($6, ''),
-			execution_time_ms           = $7,
-			memory_kb                   = $8
+			failed_test_actual_output   = NULLIF($7, ''),
+			error_output                = NULLIF($8, ''),
+			execution_time_ms           = $9,
+			memory_kb                   = $10
 		WHERE id = $1`
 
 	tag, err := r.db.Exec(ctx, query,
@@ -87,6 +91,8 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 		v.TestsTotal,
 		v.FailedTestStdin,
 		v.FailedTestExpectedOutput,
+		v.FailedTestActualOutput,
+		v.ErrorOutput,
 		v.ExecutionTimeMs,
 		v.MemoryKB,
 	)
