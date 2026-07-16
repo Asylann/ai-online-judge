@@ -161,3 +161,26 @@ func (h *AdminHandler) GenerateTestCases(c *gin.Context) {
 
 	c.Data(http.StatusOK, "application/json", respBody)
 }
+
+// CheckSubmissionSimilarity handles GET /api/v1/admin/submissions/similarity?problem_id=XYZ
+// Queries all Accepted submissions for the given problem and cross-references their AST snapshots.
+func (h *AdminHandler) CheckSubmissionSimilarity(c *gin.Context) {
+	problemIDStr := c.Query("problem_id")
+	if problemIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "problem_id query parameter is required"})
+		return
+	}
+	problemID, err := uuid.Parse(problemIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid problem_id format"})
+		return
+	}
+
+	pairs, err := h.adminService.CheckSubmissionSimilarity(c.Request.Context(), problemID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pairs": pairs})
+}

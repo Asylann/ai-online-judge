@@ -5,13 +5,16 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { EffortDashboard, SubmissionMetric } from "@/components/EffortDashboard";
-import { User, Mail, Shield, Award, Activity, Code, Clock, CheckCircle2, AlertTriangle, ArrowLeft, Save, Sparkles, RefreshCw } from "lucide-react";
+import { User, Mail, Shield, Award, Activity, Code, Clock, CheckCircle2, AlertTriangle, ArrowLeft, Save, Sparkles, RefreshCw, PlayCircle } from "lucide-react";
+import { TimeTravelPlayer, PlaybackAttempt } from "@/components/TimeTravelPlayer";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface SubmissionHistoryItem {
   id: string;
+  problem_id?: string;
   problem_title: string;
+  code_base64?: string;
   language: string;
   status: string;
   tests_passed: number;
@@ -22,12 +25,15 @@ interface SubmissionHistoryItem {
   cognitive_effort_index: number;
   ai_hint_text?: string;
   created_at: string;
+  raw_created_at?: string;
 }
 
 const mockHistory: SubmissionHistoryItem[] = [
   {
     id: "sub-101",
+    problem_id: "prob-101",
     problem_title: "Two Sum — Optimal Structural Indexing",
+    code_base64: "ZGVmIHR3b19zdW0obnVtcywgdGFyZ2V0KToKICAgICMgT3B0aW1hbCBoYXNoIG1hcCBpbmRleGluZyBhcFByb2FjaAogICAgc2VlbiA9IHt9CiAgICBmb3IgaSwgbnVtIGluIGVudW1lcmF0ZShudW1zKToKICAgICAgICBkaWZmID0gdGFyZ2V0IC0gbnVtCiAgICAgICAgaWYgZGlmZiBpbiBzZWVuOgogICAgICAgICAgICByZXR1cm4gW3NlZW5bZGlmZl0sIGldCiAgICAgICAgc2VlbltudW1dID0gaQogICAgcmV0dXJuIFtd",
     language: "python3",
     status: "Accepted",
     tests_passed: 10,
@@ -37,10 +43,13 @@ const mockHistory: SubmissionHistoryItem[] = [
     ast_complexity_score: 1.2,
     cognitive_effort_index: 4.8,
     created_at: "Just now",
+    raw_created_at: new Date().toISOString(),
   },
   {
     id: "sub-102",
+    problem_id: "prob-102",
     problem_title: "Balanced BST Verification — AST Recursion",
+    code_base64: "ZGVmIGlzX2JhbGFuY2VkKHJvb3QpOgogICAgIyBNSVNTSU5HIEJBU0UgQ0FTRQogICAgbGVmdF9oID0gaGVpZ2h0KHJvb3QubGVmdCkKICAgIHJpZ2h0X2ggPSBoZWlnaHQocm9vdC5yaWdodCkKICAgIHJldHVybiBhYnMobGVmdF9oIC0gcmlnaHRfaCkgPD0gMQ==",
     language: "python3",
     status: "WA",
     tests_passed: 3,
@@ -51,10 +60,13 @@ const mockHistory: SubmissionHistoryItem[] = [
     cognitive_effort_index: 4.31,
     ai_hint_text: "What is the base condition for a recursive function that checks if a binary tree is height-balanced?",
     created_at: "10 minutes ago",
+    raw_created_at: new Date(Date.now() - 600000).toISOString(),
   },
   {
     id: "sub-103",
+    problem_id: "prob-101",
     problem_title: "Two Sum — Optimal Structural Indexing",
+    code_base64: "ZGVmIHR3b19zdW0obnVtcywgdGFyZ2V0KToKICAgICMgSW5pdGlhbCBuYWl2ZSBhcFByb2FjaCAoTygxMCkgdGVzdHMgZmFpbGVkKQogICAgZm9yIGkgaW4gcmFuZ2UobGVuKG51bXMpKToKICAgICAgICBmb3IgaiBpbiByYW5nZShpICsgMSwgbGVuKG51bXMpKToKICAgICAgICAgICAgaWYgbnVtc1tpXSArIG51bXNbal0gPT0gdGFyZ2V0OgogICAgICAgICAgICAgICAgcmV0dXJuIFtpLCBqXQogICAgcmV0dXJuIFtd",
     language: "python3",
     status: "WA",
     tests_passed: 0,
@@ -65,6 +77,7 @@ const mockHistory: SubmissionHistoryItem[] = [
     cognitive_effort_index: 10.31,
     ai_hint_text: "How can you utilize a dictionary to keep track of the numbers you've seen and their indices to efficiently find the two numbers that add up to the target?",
     created_at: "25 minutes ago",
+    raw_created_at: new Date(Date.now() - 1500000).toISOString(),
   },
 ];
 
@@ -86,6 +99,25 @@ export default function ProfileDashboardPage() {
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [submissions, setSubmissions] = useState<SubmissionHistoryItem[]>(mockHistory);
   const [metrics, setMetrics] = useState<SubmissionMetric[]>(mockMetrics);
+  const [selectedReplay, setSelectedReplay] = useState<{ problemTitle: string; attempts: PlaybackAttempt[] } | null>(null);
+
+  const openReplayForProblem = (sub: SubmissionHistoryItem) => {
+    const matchingAttempts: PlaybackAttempt[] = submissions
+      .filter((s) => s.problem_title === sub.problem_title || (s.problem_id && sub.problem_id && s.problem_id === sub.problem_id))
+      .map((s) => ({
+        id: s.id,
+        code_base64: s.code_base64 || "IyBObyBoaXN0b3JpY2FsIGNvZGUgc3NuYXBzaG90IHJlY29yZGVkIGZvciB0aGlzIGF0dGVtcHQu",
+        status: s.status,
+        execution_time_ms: s.execution_time_ms,
+        cognitive_effort_index: s.cognitive_effort_index,
+        ast_complexity_score: s.ast_complexity_score,
+        created_at: s.created_at,
+        raw_created_at: s.raw_created_at || s.created_at,
+        language: s.language,
+      }));
+    setSelectedReplay({ problemTitle: sub.problem_title, attempts: matchingAttempts });
+  };
+
   const [statsSummary, setStatsSummary] = useState<{
     solved_problems: number;
     total_problems: number;
@@ -138,15 +170,20 @@ export default function ProfileDashboardPage() {
         if (subsRes.data && Array.isArray(subsRes.data.submissions)) {
           const fetchedSubs = subsRes.data.submissions.map((item: any) => ({
             id: item.id || `sub-${Math.random().toString(36).substring(2, 7)}`,
+            problem_id: item.problem_id || "",
             problem_title: item.problem_title || "Algorithmic Challenge",
+            code_base64: item.code_base64 || "",
             language: item.language || "python3",
             status: item.status || "Pending",
+            tests_passed: item.tests_passed !== undefined ? item.tests_passed : 0,
+            tests_total: item.tests_total !== undefined ? item.tests_total : 10,
             execution_time_ms: item.execution_time_ms !== undefined ? item.execution_time_ms : 15,
             memory_kb: item.memory_kb !== undefined ? item.memory_kb : 4120,
             ast_complexity_score: item.ast_complexity_score !== undefined ? item.ast_complexity_score : 1.2,
             cognitive_effort_index: item.cognitive_effort_index !== undefined ? item.cognitive_effort_index : 2.5,
             ai_hint_text: item.ai_hint_text || undefined,
             created_at: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now",
+            raw_created_at: item.created_at || new Date().toISOString(),
           }));
           setSubmissions(fetchedSubs);
 
@@ -440,6 +477,7 @@ export default function ProfileDashboardPage() {
                 <th className="py-3 px-4">Isolate CPU / RAM</th>
                 <th className="py-3 px-4">Effort Index</th>
                 <th className="py-3 px-4">Virtual TA Guidance</th>
+                <th className="py-3 px-4 text-center">Time-Travel</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-900/5 text-xs font-sans text-slate-800">
@@ -500,12 +538,31 @@ export default function ProfileDashboardPage() {
                   <td className="py-4 px-4 text-slate-600 max-w-md line-clamp-2 italic">
                     {sub.ai_hint_text ? `"${sub.ai_hint_text}"` : "— (Clean Acceptance)"}
                   </td>
+                  <td className="py-4 px-4 text-center">
+                    <button
+                      onClick={() => openReplayForProblem(sub)}
+                      className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-ivory-100 font-mono text-xs font-bold transition-all shadow-sm"
+                      title="Replay code changes across all attempts for this problem"
+                    >
+                      <PlayCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Replay</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal Overlay for Time-Travel Code Playback */}
+      {selectedReplay && (
+        <TimeTravelPlayer
+          problemTitle={selectedReplay.problemTitle}
+          attempts={selectedReplay.attempts}
+          onClose={() => setSelectedReplay(null)}
+        />
+      )}
     </div>
   );
 }

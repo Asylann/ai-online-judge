@@ -357,6 +357,7 @@ func RegisterRoutes(
 			g.GET("/users", adminH.ListUsers)
 			g.DELETE("/users/:id", adminH.DeleteUser)
 			g.DELETE("/submissions/:id", adminH.DeleteSubmission)
+			g.GET("/submissions/similarity", adminH.CheckSubmissionSimilarity)
 			g.POST("/problems", adminH.CreateProblem)
 			g.PUT("/problems/:id", adminH.UpdateProblem)
 			g.DELETE("/problems/:id", adminH.DeleteProblem)

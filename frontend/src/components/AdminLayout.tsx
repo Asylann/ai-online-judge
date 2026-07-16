@@ -25,6 +25,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { name: "Problems", href: "/admin/problems", icon: FileCode },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Submissions", href: "/admin/submissions", icon: ListChecks },
+    { name: "AST Integrity", href: "/admin/integrity", icon: ShieldAlert },
   ];
 
   if (!authReady) {

@@ -150,6 +150,7 @@ type SubmissionHistoryItem struct {
 	ID                   uuid.UUID `json:"id"`
 	ProblemID            uuid.UUID `json:"problem_id"`
 	ProblemTitle         string    `json:"problem_title"`
+	CodeBase64           string    `json:"code_base64"`
 	Language             string    `json:"language"`
 	Status               string    `json:"status"`
 	TestsPassed          int       `json:"tests_passed"`
@@ -160,4 +161,27 @@ type SubmissionHistoryItem struct {
 	CognitiveEffortIndex float64   `json:"cognitive_effort_index"`
 	AIHintText           string    `json:"ai_hint_text"`
 	CreatedAt            time.Time `json:"created_at"`
+}
+
+// AcceptedSubmission represents an accepted submission fetched for AST similarity comparison.
+type AcceptedSubmission struct {
+	ID          uuid.UUID `json:"id" db:"id"`
+	UserID      uuid.UUID `json:"user_id" db:"user_id"`
+	Username    string    `json:"username" db:"username"`
+	CodeBase64  string    `json:"code_base64" db:"code_base64"`
+	ASTSnapshot *string   `json:"ast_snapshot" db:"ast_snapshot"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+}
+
+// SubmissionSimilarityPair represents a high-similarity pair between two different users for integrity checks.
+type SubmissionSimilarityPair struct {
+	UserAID         uuid.UUID `json:"user_a_id"`
+	UserAUsername   string    `json:"user_a_username"`
+	SubmissionAID   uuid.UUID `json:"submission_a_id"`
+	SubmissionACode string    `json:"submission_a_code"` // Base64 code
+	UserBID         uuid.UUID `json:"user_b_id"`
+	UserBUsername   string    `json:"user_b_username"`
+	SubmissionBID   uuid.UUID `json:"submission_b_id"`
+	SubmissionBCode string    `json:"submission_b_code"` // Base64 code
+	SimilarityScore float64   `json:"similarity_score"`  // 0.0 to 1.0 (e.g., 0.92 for 92%)
 }

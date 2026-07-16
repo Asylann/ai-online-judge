@@ -303,7 +303,7 @@ func (r *pgSubmissionRepository) ListSubmissionsByUserID(ctx context.Context, us
 	query := `
 		SELECT
 			s.id, s.problem_id, COALESCE(p.title, 'Unknown Problem') AS problem_title,
-			s.language, s.status,
+			COALESCE(s.code_base64, '') AS code_base64, s.language, s.status,
 			COALESCE(s.tests_passed, 0), COALESCE(s.tests_total, 0),
 			COALESCE(s.execution_time_ms, 0), COALESCE(s.memory_kb, 0),
 			COALESCE(s.ast_complexity_score, 0), COALESCE(s.cognitive_effort_index, 0),
@@ -325,7 +325,7 @@ func (r *pgSubmissionRepository) ListSubmissionsByUserID(ctx context.Context, us
 		var item models.SubmissionHistoryItem
 		if err := rows.Scan(
 			&item.ID, &item.ProblemID, &item.ProblemTitle,
-			&item.Language, &item.Status,
+			&item.CodeBase64, &item.Language, &item.Status,
 			&item.TestsPassed, &item.TestsTotal,
 			&item.ExecutionTimeMs, &item.MemoryKB,
 			&item.ASTComplexityScore, &item.CognitiveEffortIndex,
