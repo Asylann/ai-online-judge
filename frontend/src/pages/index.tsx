@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { EffortDashboard, SubmissionMetric } from "@/components/EffortDashboard";
 import { Leaderboard } from "@/components/Leaderboard";
 import { ChallengeOfTheDay } from "@/components/ChallengeOfTheDay";
+import { HeroVisual } from "@/components/HeroVisual";
+import { ZPDQuestMap } from "@/components/ZPDQuestMap";
 import { ArrowUpRight, BookOpen, Sparkles, Activity, Code, Award, Search, Filter } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -158,6 +160,8 @@ const sampleBaselineMetrics: SubmissionMetric[] = [
 export default function DashboardPage() {
   const { user, authReady } = useAuth();
   const [problems, setProblems] = useState<Problem[]>(mockProblems);
+  const [modules, setModules] = useState<any[]>([]);
+  const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<SubmissionMetric[]>(sampleBaselineMetrics);
   const [loadingProblems, setLoadingProblems] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -166,13 +170,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get(`${API_URL}/problems`);
-        const probData = response.data?.problems || response.data;
+        const [probRes, modRes] = await Promise.all([
+          axios.get(`${API_URL}/problems`).catch(() => ({ data: null })),
+          axios.get(`${API_URL}/modules`).catch(() => ({ data: null })),
+        ]);
+        const probData = probRes.data?.problems || probRes.data;
         if (probData && Array.isArray(probData) && probData.length > 0) {
           setProblems(probData);
         }
+        const modData = modRes.data?.modules || modRes.data;
+        if (modData && Array.isArray(modData)) {
+          setModules(modData);
+        }
       } catch (err) {
-        console.warn("Could not fetch problems from backend API, defaulting to mock canonical problems.", err);
+        console.warn("Could not fetch problems/modules from backend API, defaulting to mock canonical problems.", err);
       } finally {
         setLoadingProblems(false);
       }
@@ -187,6 +198,7 @@ export default function DashboardPage() {
       const userID = user?.id;
       if (!token || !userID) {
         setMetrics(sampleBaselineMetrics);
+        setUserSubmissions([]);
         return;
       }
       try {
@@ -195,6 +207,7 @@ export default function DashboardPage() {
         });
         const data = res.data;
         const subs: any[] = data?.submissions || data || [];
+        setUserSubmissions(subs);
         if (subs.length > 0) {
           const mapped: SubmissionMetric[] = subs
             .slice()
@@ -213,6 +226,7 @@ export default function DashboardPage() {
       } catch (err) {
         console.warn("Could not fetch EDM metrics:", err);
         setMetrics(sampleBaselineMetrics);
+        setUserSubmissions([]);
       }
     };
     fetchEDMMetrics();
@@ -233,43 +247,52 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 py-12 sm:py-16 space-y-20">
-      {/* Hero Section with Staggered Word Reveal */}
-      <section className="max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase mb-6"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          <span>Society 5.0 Smart Learning & Educational Data Mining</span>
-        </motion.div>
+      {/* Hero Section with Staggered Word Reveal & Visual Animation */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="lg:col-span-7 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
+          >
+            <Sparkles className="w-4 h-4 text-amber-600 animate-spin" />
+            <span>Society 5.0 Smart Learning & Educational Data Mining</span>
+          </motion.div>
 
-        <motion.h1
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="text-4xl sm:text-5xl lg:text-6xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap gap-x-3 gap-y-1"
-        >
-          {HERO_TEXT.split(" ").map((word, index) => (
-            <motion.span key={index} variants={wordVariants} className="inline-block">
-              {word}
-            </motion.span>
-          ))}
-        </motion.h1>
+          <motion.h1
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap gap-x-3 gap-y-1"
+          >
+            {HERO_TEXT.split(" ").map((word, index) => (
+              <motion.span key={index} variants={wordVariants} className="inline-block">
+                {word}
+              </motion.span>
+            ))}
+          </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed mt-6 max-w-3xl"
-        >
-          {HERO_SUBTEXT}
-        </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl"
+          >
+            {HERO_SUBTEXT}
+          </motion.p>
+        </div>
+
+        <div className="lg:col-span-5 w-full">
+          <HeroVisual />
+        </div>
       </section>
 
       {/* Challenge of the Day (24h Featured Banner) */}
       <ChallengeOfTheDay />
+
+      {/* Visual ZPD Adventure Quest Map */}
+      <ZPDQuestMap modules={modules} problems={problems} userSubmissions={userSubmissions} />
 
       {/* Algorithmic Problems List */}
       <section className="space-y-6">
