@@ -23,6 +23,7 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
   onDismiss,
 }) => {
   const isEvaluating = isLoading || verdict === "Evaluating inside Sandbox (Isolate cgroup)..." || verdict === "Pending" || verdict === "In Queue" || verdict === "Processing";
+  const isThinking = isEvaluating || (hint && (hint.hint_text.includes("Analyzing structural deviation") || hint.hint_text.includes("Virtual TA Problem Setter is analyzing")));
 
   return (
     <AnimatePresence mode="wait">
@@ -57,7 +58,7 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
               </div>
             </div>
 
-            {hint?.cognitive_effort_index !== undefined && !isEvaluating && (
+            {hint?.cognitive_effort_index !== undefined && !isThinking && (
               <div className="text-right">
                 <span className="text-[10px] font-mono uppercase text-slate-400 block">
                   Cognitive Effort Index
@@ -70,19 +71,49 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
           </div>
 
           {/* Body Content */}
-          {isEvaluating ? (
-            /* Loading / Sandbox Evaluation State */
-            <div className="py-6 flex items-center space-x-3.5 text-amber-900 bg-amber-50/50 p-4 rounded-lg border border-amber-200/60">
-              <Loader2 className="w-5 h-5 text-amber-700 animate-spin flex-shrink-0" />
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono">
-                  Evaluating inside Isolate cgroup Sandbox...
-                </h4>
-                <p className="text-xs mt-1 text-slate-600 leading-relaxed font-sans">
-                  Running your code against 10 ranked test cases. AST structural analysis and Virtual TA are monitoring for deviations.
-                </p>
+          {isThinking ? (
+            /* Animated AI Thinking & AST Analysis State (Star Jumping/Rolling) */
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-6 px-5 bg-gradient-to-br from-amber-50/90 via-ivory-100 to-amber-100/50 rounded-xl border border-amber-300/80 shadow-inner flex flex-col sm:flex-row items-center sm:items-start gap-5 text-amber-950"
+            >
+              <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-600 shrink-0 shadow-sm animate-bounce">
+                <motion.div
+                  animate={{ rotate: 360, scale: [1, 1.25, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles className="w-7 h-7 text-amber-600" />
+                </motion.div>
+                <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/50 animate-ping opacity-75" />
               </div>
-            </div>
+              <div className="space-y-2 text-center sm:text-left flex-1">
+                <div className="flex items-center justify-center sm:justify-start space-x-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300/60">
+                    Socratic AI Engine Active
+                  </span>
+                  <span className="text-[11px] font-mono text-amber-700 animate-pulse font-semibold">
+                    gotreesitter + GPT-4o RAG
+                  </span>
+                </div>
+                <h4 className="text-sm font-serif font-bold text-slate-900 leading-snug">
+                  {hint?.hint_text || "Virtual TA is analyzing structural deviations & synthesizing guiding Socratic hint..."}
+                </h4>
+                <p className="text-xs text-slate-600 font-sans leading-relaxed">
+                  Comparing your AST snapshot (`gotreesitter` structural pattern) against known logical error degrees. Formulating minimal-edit pedagogical guidance to keep you inside your Zone of Proximal Development.
+                </p>
+                <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span className="px-2.5 py-1 bg-white/80 rounded-md border border-slate-900/10 text-[11px] font-mono text-slate-700 shadow-sm flex items-center space-x-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                    <span>AST Complexity Check</span>
+                  </span>
+                  <span className="px-2.5 py-1 bg-white/80 rounded-md border border-slate-900/10 text-[11px] font-mono text-slate-700 shadow-sm flex items-center space-x-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>EDM Effort Index Calculation</span>
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           ) : verdict === "Accepted" ? (
             /* Accepted State */
             <div className="py-5 flex items-start space-x-3.5 text-emerald-950 bg-emerald-900/10 p-5 rounded-xl border border-emerald-800/30">

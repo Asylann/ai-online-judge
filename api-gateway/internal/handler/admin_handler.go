@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/api-gateway/internal/service"
 	"github.com/ai-online-judge/pkg/models"
 )
@@ -16,11 +17,12 @@ import (
 // AdminHandler handles HTTP requests for admin management.
 type AdminHandler struct {
 	adminService service.AdminService
+	moduleRepo   repository.ModuleRepository
 }
 
 // NewAdminHandler constructs an AdminHandler.
-func NewAdminHandler(adminService service.AdminService) *AdminHandler {
-	return &AdminHandler{adminService: adminService}
+func NewAdminHandler(adminService service.AdminService, moduleRepo repository.ModuleRepository) *AdminHandler {
+	return &AdminHandler{adminService: adminService, moduleRepo: moduleRepo}
 }
 
 // ListUsers handles GET /api/v1/admin/users
@@ -66,15 +68,17 @@ func (h *AdminHandler) DeleteSubmission(c *gin.Context) {
 }
 
 type createProblemRequest struct {
-	Title          string            `json:"title" binding:"required"`
-	Description    string            `json:"description" binding:"required"`
-	Difficulty     string            `json:"difficulty"`
-	TimeLimit      int               `json:"time_limit_ms"`
-	MemoryLimit    int               `json:"memory_limit_kb"`
-	Tags           []string          `json:"tags"`
-	Stdin          string            `json:"stdin"`
-	ExpectedOutput string            `json:"expected_output"`
-	TestCases      []models.TestCase `json:"test_cases"`
+	Title           string            `json:"title" binding:"required"`
+	Description     string            `json:"description" binding:"required"`
+	Difficulty      string            `json:"difficulty"`
+	TimeLimit       int               `json:"time_limit_ms"`
+	MemoryLimit     int               `json:"memory_limit_kb"`
+	Tags            []string          `json:"tags"`
+	Stdin           string            `json:"stdin"`
+	ExpectedOutput  string            `json:"expected_output"`
+	TestCases       []models.TestCase `json:"test_cases"`
+	ModuleID        *uuid.UUID        `json:"module_id,omitempty"`
+	SequentialOrder int               `json:"sequential_order"`
 }
 
 // CreateProblem handles POST /api/v1/admin/problems
@@ -90,6 +94,7 @@ func (h *AdminHandler) CreateProblem(c *gin.Context) {
 		req.Title, req.Description, req.Difficulty,
 		req.TimeLimit, req.MemoryLimit, req.Tags,
 		req.Stdin, req.ExpectedOutput, req.TestCases,
+		req.ModuleID, req.SequentialOrder,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -118,7 +123,8 @@ func (h *AdminHandler) UpdateProblem(c *gin.Context) {
 		c.Request.Context(), id,
 		req.Title, req.Description, req.Difficulty,
 		req.TimeLimit, req.MemoryLimit, req.Tags,
-		req.Stdin, req.ExpectedOutput,
+		req.Stdin, req.ExpectedOutput, req.TestCases,
+		req.ModuleID, req.SequentialOrder,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -126,6 +132,100 @@ func (h *AdminHandler) UpdateProblem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"problem": p})
+}
+
+// ListAdminModules handles GET /api/v1/admin/modules — returns all modules for admin selection.
+func (h *AdminHandler) ListAdminModules(c *gin.Context) {
+	modules, err := h.moduleRepo.ListModules(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"modules": modules})
+}
+
+type createModuleRequest struct {
+	Title           string `json:"title" binding:"required"`
+	Description     string `json:"description"`
+	SequentialOrder int    `json:"sequential_order"`
+}
+
+// CreateModule handles POST /api/v1/admin/modules
+func (h *AdminHandler) CreateModule(c *gin.Context) {
+	var req createModuleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.SequentialOrder <= 0 {
+		req.SequentialOrder = 1
+	}
+	m, err := h.moduleRepo.CreateModule(c.Request.Context(), req.Title, req.Description, req.SequentialOrder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"module": m})
+}
+
+// DeleteModule handles DELETE /api/v1/admin/modules/:id
+func (h *AdminHandler) DeleteModule(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid module ID"})
+		return
+	}
+	if err := h.moduleRepo.DeleteModule(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "module deleted and problems un-assigned"})
+}
+
+// UpdateModule handles PUT /api/v1/admin/modules/:id
+func (h *AdminHandler) UpdateModule(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid module ID"})
+		return
+	}
+	var req createModuleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.SequentialOrder <= 0 {
+		req.SequentialOrder = 1
+	}
+	m, err := h.moduleRepo.UpdateModule(c.Request.Context(), id, req.Title, req.Description, req.SequentialOrder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"module": m})
+}
+
+type reorderProblemsRequest struct {
+	ProblemIDs []uuid.UUID `json:"problem_ids" binding:"required"`
+}
+
+// ReorderModuleProblems handles PUT /api/v1/admin/modules/:id/reorder
+func (h *AdminHandler) ReorderModuleProblems(c *gin.Context) {
+	moduleID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid module ID"})
+		return
+	}
+	var req reorderProblemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.moduleRepo.ReorderModuleProblems(c.Request.Context(), moduleID, req.ProblemIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "problems reordered successfully"})
 }
 
 // DeleteProblem handles DELETE /api/v1/admin/problems/:id
