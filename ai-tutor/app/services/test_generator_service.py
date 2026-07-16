@@ -6,7 +6,7 @@ to guarantee every test case has exact token counts, complete inputs, and 100% m
 
 import json
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
 from app.core.config import settings
 
@@ -140,6 +140,83 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
         return cls._validate_and_fix_suite(suite, title, description, sample_stdin, sample_expected_output)
 
     @classmethod
+    def _detect_problem_format(cls, sample_stdin: str) -> str:
+        """
+        Analyze sample_stdin to determine problem input format:
+        - 'binary_grid': e.g., '4 5\n11000\n11000...' (rows with 0s and 1s)
+        - 'grid_or_matrix': e.g., '3 3\n1 2 3\n4 5 6...' (multi-row table)
+        - '1d_array': e.g., '5\n10 20 -5 15 0' (n followed by exactly n numbers)
+        - 'simple_tokens': anything else (single numbers, strings, etc.)
+        """
+        if not sample_stdin or not sample_stdin.strip():
+            return "simple_tokens"
+
+        lines = [line.strip() for line in sample_stdin.strip().split("\n") if line.strip()]
+        if len(lines) >= 2:
+            first_tokens = lines[0].split()
+            # Check if first line is R C (two integers) and subsequent lines match R rows
+            if len(first_tokens) == 2 and first_tokens[0].isdigit() and first_tokens[1].isdigit():
+                r_rows = int(first_tokens[0])
+                if len(lines[1:]) == r_rows or len(lines) >= 3:
+                    # Check if binary strings like '11000'
+                    if all(set(l).issubset({"0", "1"}) for l in lines[1:]):
+                        return "binary_grid"
+                    return "grid_or_matrix"
+
+        # Check if first token is n and rest is exactly n integers
+        tokens = sample_stdin.split()
+        if len(tokens) > 1 and tokens[0].lstrip("-").isdigit():
+            try:
+                n_val = int(tokens[0])
+                if len(tokens[1:]) == n_val and all(x.lstrip("-").isdigit() for x in tokens[1:]):
+                    return "1d_array"
+            except ValueError:
+                pass
+
+        if len(lines) > 2:
+            return "grid_or_matrix"
+        return "simple_tokens"
+
+    @classmethod
+    def _solve_binary_grid_islands(cls, stdin_str: str) -> Optional[int]:
+        """
+        Parses stdin_str as a 2D binary grid and exactly computes the number of connected 1s (islands) using BFS.
+        """
+        try:
+            lines = [l.strip() for l in stdin_str.strip().split("\n") if l.strip()]
+            if not lines:
+                return None
+            first = lines[0].split()
+            grid_lines = lines[1:] if (len(first) == 2 and first[0].isdigit() and first[1].isdigit()) else lines
+            if not grid_lines:
+                return None
+            grid = [list(l) for l in grid_lines if all(c in '01' for c in l)]
+            if not grid or not grid[0]:
+                return None
+
+            rows, cols = len(grid), len(grid[0])
+            visited = [[False] * cols for _ in range(rows)]
+            islands = 0
+
+            for r in range(rows):
+                for c in range(cols):
+                    if grid[r][c] == '1' and not visited[r][c]:
+                        islands += 1
+                        queue = [(r, c)]
+                        visited[r][c] = True
+                        while queue:
+                            curr_r, curr_c = queue.pop(0)
+                            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                                nr, nc = curr_r + dr, curr_c + dc
+                                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '1' and not visited[nr][nc]:
+                                    visited[nr][nc] = True
+                                    queue.append((nr, nc))
+            return islands
+        except Exception as e:
+            logger.warning(f"Error computing binary grid islands: {e}")
+            return None
+
+    @classmethod
     def _validate_and_fix_suite(
         cls,
         suite: List[Dict[str, Any]],
@@ -150,29 +227,20 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
     ) -> List[Dict[str, Any]]:
         """
         Backend Test Integrity Check & Automatic Validator:
-        Never trust raw AI output alone. Automatically checks EVERY generated test case (Ranks 1–10):
-        1. Verifies `tokens = stdin.split()`, checks `n = int(tokens[0])` and asserts `len(tokens[1:]) == n`.
-        2. Reconstructs invalid/truncated inputs (`...`, count mismatches, missing numbers) with exact arrays.
-        3. Recalculates exact mathematical `expected_output` for count/sum/min/max problems.
+        1. NEVER modifies Rank 1 (sample test case provided by admin).
+        2. Detects whether the problem is a 2D grid/matrix vs 1D array of numbers.
+        3. Only applies 1D integer count/sum repairs when the problem format is strictly '1d_array'.
+        4. Automatically runs BFS/DFS island verification on binary grid problems.
         """
+        format_type = cls._detect_problem_format(sample_stdin)
         text_context = f"{title} {description}".lower()
-        is_count_positive = "count positive" in text_context or "greater than zero" in text_context or "positive number" in text_context
+        is_count_positive = "count positive" in text_context or "greater than zero" in text_context
         is_count_negative = "count negative" in text_context or "less than zero" in text_context
         is_count_zero = "count zero" in text_context
         is_sum = "sum" in text_context or "adding" in text_context
         is_max = "max" in text_context or "largest" in text_context
         is_min = "min" in text_context or "smallest" in text_context
-
-        # Check if sample format has header n followed by n integers
-        is_n_array_format = False
-        try:
-            s_tokens = sample_stdin.strip().split()
-            if len(s_tokens) > 1:
-                n_sample = int(s_tokens[0])
-                if len(s_tokens[1:]) == n_sample or len(s_tokens[1:]) > 0:
-                    is_n_array_format = True
-        except Exception:
-            is_n_array_format = False
+        is_island_problem = "island" in text_context or "connected" in text_context
 
         validated_suite = []
         for idx, item in enumerate(suite):
@@ -180,53 +248,52 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
             stdin_str = str(item.get("stdin", "")).strip()
             expected_str = str(item.get("expected_output", "")).strip()
 
-            # Check for illegal placeholders or ellipses in stdin
+            # Rule 1: NEVER modify Rank 1 (Admin's primary sample test case)
+            if rank == 1 or item.get("is_sample"):
+                item["is_sample"] = True
+                item["stdin"] = sample_stdin.strip() + "\n" if sample_stdin else ""
+                item["expected_output"] = sample_output.strip()
+                item["difficulty_rank"] = 1
+                validated_suite.append(item)
+                continue
+
+            # Check for illegal placeholders or ellipses in AI output
             has_placeholder = any(p in stdin_str for p in ["...", "..", "xxxx", "hidden", "generate", "TODO"])
 
-            if is_n_array_format or is_count_positive or is_sum:
+            # Rule 2: If format is strictly 1D array, perform integer array integrity checks and exact math checks
+            if format_type == "1d_array":
                 tokens = stdin_str.split()
                 try:
-                    n_val = int(tokens[0]) if tokens else 0
-                    nums = [int(x) for x in tokens[1:]] if len(tokens) > 1 else []
+                    n_val = int(tokens[0]) if tokens and tokens[0].lstrip("-").isdigit() else 0
+                    nums = [int(x) for x in tokens[1:] if x.lstrip("-").isdigit()] if len(tokens) > 1 else []
 
-                    # If validation fails (placeholder present, count mismatch, or adversarial token limit truncation)
-                    if rank > 1 and (has_placeholder or len(nums) != n_val or n_val < 0 or n_val > 100000):
-                        logger.warning(f"[TestIntegrityValidator] Rank {rank} failed integrity check (n={n_val}, count={len(nums)}, placeholder={has_placeholder}). Auto-repairing.")
+                    if has_placeholder or len(nums) != n_val or n_val < 0 or n_val > 100000:
+                        logger.warning(f"[TestIntegrityValidator] Rank {rank} 1D array failed integrity check (n={n_val}, count={len(nums)}). Auto-repairing.")
                         if rank == 2:
-                            n_val = 0
-                            nums = []
+                            n_val, nums = 0, []
                         elif rank == 3:
-                            n_val = 1
-                            nums = [10]
+                            n_val, nums = 1, [10]
                         elif rank == 4:
-                            n_val = 1
-                            nums = [-10]
+                            n_val, nums = 1, [-10]
                         elif rank == 5:
-                            n_val = 1
-                            nums = [0]
+                            n_val, nums = 1, [0]
                         elif rank == 6:
-                            n_val = 6
-                            nums = [-1, 0, 1, 2, 0, -3]
+                            n_val, nums = 6, [-1, 0, 1, 2, 0, -3]
                         elif rank == 7:
-                            n_val = 10
-                            nums = [10, -10, 10, -10, 10, -10, 10, -10, 10, -10]
+                            n_val, nums = 10, [10, -10, 10, -10, 10, -10, 10, -10, 10, -10]
                         elif rank == 8:
-                            n_val = 8
-                            nums = [1000000000, 1000000000, -1000000000, -1000000000, 0, 0, 1000000000, -1000000000]
+                            n_val, nums = 8, [1000000000, 1000000000, -1000000000, -1000000000, 0, 0, 1000000000, -1000000000]
                         elif rank == 9:
-                            n_val = 1000
-                            nums = [((i * 37) % 200) - 100 for i in range(1, 1001)]
+                            n_val, nums = 1000, [((i * 37) % 200) - 100 for i in range(1, 1001)]
                         else:  # Rank 10
-                            # Use 10,000 for Rank 10 stress test to ensure fast and clean database payload transport
-                            n_val = 10000
-                            nums = [((i * 73) % 2000) - 1000 for i in range(1, 10001)]
+                            n_val, nums = 10000, [((i * 73) % 2000) - 1000 for i in range(1, 10001)]
 
                         if not nums:
                             stdin_str = f"{n_val}\n\n"
                         else:
                             stdin_str = f"{n_val}\n" + " ".join(map(str, nums)) + "\n"
 
-                    # Compute exact mathematical expected_output from the exact tokens
+                    # Compute exact mathematical expected_output from exact 1D tokens
                     if is_count_positive:
                         expected_str = str(sum(1 for x in nums if x > 0))
                     elif is_count_negative:
@@ -241,11 +308,22 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
                         expected_str = str(min(nums)) if nums else "0"
 
                 except (ValueError, IndexError):
-                    if rank > 1:
-                        stdin_str = f"1\n{rank}\n"
-                        expected_str = "1" if is_count_positive else str(rank)
+                    pass
+            elif format_type == "binary_grid" and is_island_problem:
+                # Exactly compute BFS island count for binary grid
+                exact_count = cls._solve_binary_grid_islands(stdin_str)
+                if exact_count is not None:
+                    expected_str = str(exact_count)
+            elif has_placeholder:
+                # If AI generated placeholder inside a 2D grid/matrix or string problem, repair with heuristic fallback for that rank
+                fallback_cases = cls._generate_heuristic_cases(title, description, sample_stdin, sample_output)
+                for fb in fallback_cases:
+                    if fb.get("difficulty_rank") == rank:
+                        stdin_str = fb["stdin"]
+                        expected_str = fb["expected_output"]
+                        break
 
-            item["is_sample"] = (rank == 1)
+            item["is_sample"] = False
             item["stdin"] = stdin_str
             item["expected_output"] = expected_str
             item["difficulty_rank"] = rank
@@ -256,86 +334,59 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
     @classmethod
     def _generate_heuristic_cases(cls, title: str, description: str, sample_stdin: str, sample_output: str) -> List[Dict[str, Any]]:
         """
-        Generates high-quality fallback test cases for ranks 2–10 tailored to common CP inputs.
+        Generates high-quality fallback test cases for ranks 2–10, tailored to the exact problem structure (binary grid, matrix, 1D array, or simple).
         """
         cases = []
-        lines = sample_stdin.strip().split("\n") if sample_stdin else ["1"]
+        format_type = cls._detect_problem_format(sample_stdin)
 
-        # Rank 2: Minimum edge case (e.g. 0 or 1)
-        cases.append({
-            "stdin": "0\n\n" if sample_stdin.strip().split()[0].isdigit() else "1\n",
-            "expected_output": "0",
-            "difficulty_rank": 2,
-            "is_sample": False
-        })
+        if format_type == "binary_grid":
+            # Heuristic test cases specifically for 2D binary grids (e.g. Number of Islands / Grid walk)
+            grid_specs = [
+                (2, "1 1\n0\n", "0"),
+                (3, "1 1\n1\n", "1"),
+                (4, "2 2\n00\n00\n", "0"),
+                (5, "2 2\n11\n11\n", "1"),
+                (6, "3 3\n101\n010\n101\n", "5"),
+                (7, "3 3\n111\n101\n111\n", "1"),
+                (8, "4 4\n1001\n0000\n0000\n1001\n", "4"),
+                (9, "5 5\n10101\n01010\n10101\n01010\n10101\n", "13"),
+                (10, "6 6\n110011\n110011\n000000\n110011\n110011\n000000\n", "4")
+            ]
+            for rank, st, eo in grid_specs:
+                cases.append({"stdin": st, "expected_output": eo, "difficulty_rank": rank, "is_sample": False})
+            return cases
 
-        # Rank 3: Basic small input variation
-        cases.append({
-            "stdin": "1\n10\n",
-            "expected_output": "1",
-            "difficulty_rank": 3,
-            "is_sample": False
-        })
+        elif format_type == "grid_or_matrix":
+            # Heuristic test cases for general 2D matrices/grids
+            matrix_specs = [
+                (2, "1 1\n0\n", "0"),
+                (3, "1 1\n10\n", "10"),
+                (4, "2 2\n1 2\n3 4\n", sample_output if sample_output else "10"),
+                (5, "2 2\n-1 -2\n-3 -4\n", "-10"),
+                (6, "3 3\n0 0 0\n0 0 0\n0 0 0\n", "0"),
+                (7, "3 3\n1 0 -1\n0 2 0\n-1 0 3\n", "4"),
+                (8, "4 4\n10 20 30 40\n50 60 70 80\n90 100 110 120\n130 140 150 160\n", "1360"),
+                (9, "5 5\n1 1 1 1 1\n2 2 2 2 2\n3 3 3 3 3\n4 4 4 4 4\n5 5 5 5 5\n", "75"),
+                (10, "10 10\n" + "\n".join([" ".join([str((r+c)%10) for c in range(10)]) for r in range(10)]) + "\n", "450")
+            ]
+            for rank, st, eo in matrix_specs:
+                cases.append({"stdin": st, "expected_output": eo, "difficulty_rank": rank, "is_sample": False})
+            return cases
 
-        # Rank 4: Moderate variation
-        cases.append({
-            "stdin": "3\n-1 -2 -3\n",
-            "expected_output": "0",
-            "difficulty_rank": 4,
-            "is_sample": False
-        })
+        # Default: 1D array or simple tokens heuristic (ranks 2–10)
+        cases.append({"stdin": "0\n\n", "expected_output": "0", "difficulty_rank": 2, "is_sample": False})
+        cases.append({"stdin": "1\n10\n", "expected_output": "1" if sample_output == "1" else "10", "difficulty_rank": 3, "is_sample": False})
+        cases.append({"stdin": "3\n-1 -2 -3\n", "expected_output": "0" if sample_output == "0" else "-6", "difficulty_rank": 4, "is_sample": False})
+        cases.append({"stdin": "1\n0\n", "expected_output": "0", "difficulty_rank": 5, "is_sample": False})
+        cases.append({"stdin": "6\n-1 0 1 2 0 -3\n", "expected_output": "2", "difficulty_rank": 6, "is_sample": False})
+        cases.append({"stdin": "10\n10 -10 10 -10 10 -10 10 -10 10 -10\n", "expected_output": "5" if sample_output == "5" else "0", "difficulty_rank": 7, "is_sample": False})
+        cases.append({"stdin": "8\n1000000000 1000000000 -1000000000 -1000000000 0 0 1000000000 -1000000000\n", "expected_output": "3" if sample_output == "3" else "0", "difficulty_rank": 8, "is_sample": False})
 
-        # Rank 5: Zero boundaries
-        cases.append({
-            "stdin": "1\n0\n",
-            "expected_output": "0",
-            "difficulty_rank": 5,
-            "is_sample": False
-        })
-
-        # Rank 6: Mixed elements
-        cases.append({
-            "stdin": "6\n-1 0 1 2 0 -3\n",
-            "expected_output": "2",
-            "difficulty_rank": 6,
-            "is_sample": False
-        })
-
-        # Rank 7: Alternating pattern
-        cases.append({
-            "stdin": "10\n10 -10 10 -10 10 -10 10 -10 10 -10\n",
-            "expected_output": "5",
-            "difficulty_rank": 7,
-            "is_sample": False
-        })
-
-        # Rank 8: Large integer limits
-        cases.append({
-            "stdin": "8\n1000000000 1000000000 -1000000000 -1000000000 0 0 1000000000 -1000000000\n",
-            "expected_output": "3",
-            "difficulty_rank": 8,
-            "is_sample": False
-        })
-
-        # Rank 9: Stress test N=1000
         stress_9_nums = [((i * 37) % 200) - 100 for i in range(1, 1001)]
-        stress_9_str = " ".join(map(str, stress_9_nums))
-        cases.append({
-            "stdin": f"1000\n{stress_9_str}\n",
-            "expected_output": str(sum(1 for x in stress_9_nums if x > 0)),
-            "difficulty_rank": 9,
-            "is_sample": False
-        })
+        cases.append({"stdin": f"1000\n{' '.join(map(str, stress_9_nums))}\n", "expected_output": str(sum(1 for x in stress_9_nums if x > 0)), "difficulty_rank": 9, "is_sample": False})
 
-        # Rank 10: Adversarial worst-case boundary N=10000
         stress_10_nums = [((i * 73) % 2000) - 1000 for i in range(1, 10001)]
-        stress_10_str = " ".join(map(str, stress_10_nums))
-        cases.append({
-            "stdin": f"10000\n{stress_10_str}\n",
-            "expected_output": str(sum(1 for x in stress_10_nums if x > 0)),
-            "difficulty_rank": 10,
-            "is_sample": False
-        })
+        cases.append({"stdin": f"10000\n{' '.join(map(str, stress_10_nums))}\n", "expected_output": str(sum(1 for x in stress_10_nums if x > 0)), "difficulty_rank": 10, "is_sample": False})
 
         return cases
 
@@ -350,8 +401,8 @@ Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the 
         while len(final_suite) < 10:
             rank = len(final_suite) + 1
             final_suite.append({
-                "stdin": sample_stdin,
-                "expected_output": sample_output,
+                "stdin": sample_stdin.strip() + "\n" if sample_stdin else "",
+                "expected_output": sample_output.strip() if sample_output else "",
                 "difficulty_rank": rank,
                 "is_sample": (rank == 1)
             })

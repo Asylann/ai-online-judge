@@ -147,16 +147,11 @@ const mockProblems: Problem[] = [
   },
 ];
 
-const mockMetrics: SubmissionMetric[] = [
-  { attempt: 1, cognitive_effort_index: 2.5, execution_time_ms: 42, ast_complexity_score: 1.8, status: "WA" },
-  { attempt: 2, cognitive_effort_index: 3.8, execution_time_ms: 38, ast_complexity_score: 2.1, status: "WA" },
-  { attempt: 3, cognitive_effort_index: 4.2, execution_time_ms: 28, ast_complexity_score: 1.5, status: "WA" },
-  { attempt: 4, cognitive_effort_index: 4.8, execution_time_ms: 15, ast_complexity_score: 1.2, status: "Accepted" },
-];
+const mockMetrics: SubmissionMetric[] = [];
 
 export default function DashboardPage() {
   const [problems, setProblems] = useState<Problem[]>(mockProblems);
-  const [metrics, setMetrics] = useState<SubmissionMetric[]>(mockMetrics);
+  const [metrics, setMetrics] = useState<SubmissionMetric[]>([]);
   const [loadingProblems, setLoadingProblems] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
@@ -176,7 +171,35 @@ export default function DashboardPage() {
       }
     };
 
+    const fetchEDMMetrics = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+        const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (!token || !userStr) return;
+        const user = JSON.parse(userStr);
+        if (!user?.id) return;
+        const res = await axios.get(`${API_URL}/users/${user.id}/submissions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data;
+        const subs: any[] = data?.submissions || data || [];
+        if (subs.length > 0) {
+          const mapped: SubmissionMetric[] = subs.slice(0, 30).map((s: any, idx: number) => ({
+            attempt: idx + 1,
+            cognitive_effort_index: Number(s.cognitive_effort_index) || 0,
+            execution_time_ms: Number(s.execution_time_ms) || 0,
+            ast_complexity_score: Number(s.ast_complexity_score) || 0,
+            status: s.status ?? "WA",
+          }));
+          setMetrics(mapped);
+        }
+      } catch (err) {
+        console.warn("Could not fetch EDM metrics:", err);
+      }
+    };
+
     fetchDashboardData();
+    fetchEDMMetrics();
   }, []);
 
   const filteredProblems = problems.filter((prob) => {

@@ -25,6 +25,20 @@ interface EffortDashboardProps {
 }
 
 export const EffortDashboard: React.FC<EffortDashboardProps> = ({ metrics }) => {
+  if (metrics.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-14 space-y-4 text-center">
+        <Activity className="w-10 h-10 text-slate-300" />
+        <p className="text-sm font-serif font-medium text-slate-600">No effort data yet</p>
+        <p className="text-xs text-slate-400 font-sans max-w-xs leading-relaxed">
+          {typeof window !== "undefined" && localStorage.getItem("jwt_token")
+            ? "Submit your first solution to a problem — your cognitive effort trajectory will appear here."
+            : "Log in and solve your first problem to see your real-time EDM analytics here."}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Metrics Summary Cards */}

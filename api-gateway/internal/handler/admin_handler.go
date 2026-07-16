@@ -118,7 +118,7 @@ func (h *AdminHandler) UpdateProblem(c *gin.Context) {
 		c.Request.Context(), id,
 		req.Title, req.Description, req.Difficulty,
 		req.TimeLimit, req.MemoryLimit, req.Tags,
-		req.Stdin, req.ExpectedOutput,
+		req.Stdin, req.ExpectedOutput, req.TestCases,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

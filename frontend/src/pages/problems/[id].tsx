@@ -131,10 +131,15 @@ export default function ProblemWorkspacePage() {
             if (newStatus === "Accepted") {
               fetchRecommendation();
             } else {
-              setHint((prev) => prev || {
-                hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o...`,
-                target_line: null,
-                cognitive_effort_index: 2.5,
+              setHint((prev) => {
+                if (prev && !prev.hint_text.startsWith("Virtual TA (Socratic Hint): Your code returned status")) {
+                  return prev; // Real AI hint already set — don't overwrite
+                }
+                return {
+                  hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o...`,
+                  target_line: null,
+                  cognitive_effort_index: 2.5,
+                };
               });
             }
           }
@@ -283,9 +288,15 @@ export default function ProblemWorkspacePage() {
       }
     } catch (err: any) {
       setVerdict(null);
-      setErrorMsg(
-        err.response?.data?.error || "Execution failed inside sandbox. Please check API Gateway connectivity."
-      );
+      const status = err.response?.status;
+      const apiError = err.response?.data?.error || "";
+      if (status === 401 || apiError.toLowerCase().includes("authorization") || apiError.toLowerCase().includes("token")) {
+        setErrorMsg("Wanna try to solve? Log in first to submit your code! 🔐");
+      } else if (status === 403) {
+        setErrorMsg("Access denied. You don't have permission to submit to this problem.");
+      } else {
+        setErrorMsg(apiError || "Execution failed inside sandbox. Please check API Gateway connectivity.");
+      }
       setSubmitting(false);
       setActiveSubmissionId(null);
     }
@@ -433,9 +444,26 @@ export default function ProblemWorkspacePage() {
               </div>
 
               {errorMsg && (
-                <div className="p-3 mb-4 bg-terracotta/10 border border-terracotta/30 text-xs text-terracotta font-sans leading-relaxed">
-                  <span className="font-semibold block mb-0.5">System Notice:</span>
-                  {errorMsg}
+                <div className="p-4 mb-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-sans leading-relaxed">
+                  {errorMsg.includes("Log in first") ? (
+                    <>
+                      <span className="font-semibold text-amber-800 block mb-2">🔐 Login Required</span>
+                      <span className="text-amber-700">{errorMsg}</span>
+                      <div className="mt-3">
+                        <a
+                          href="/login"
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-900 text-ivory-100 text-xs font-semibold tracking-tight hover:bg-slate-800 transition-colors"
+                        >
+                          Go to Login →
+                        </a>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-terracotta block mb-0.5">System Notice:</span>
+                      <span className="text-terracotta">{errorMsg}</span>
+                    </>
+                  )}
                 </div>
               )}
 

@@ -20,6 +20,7 @@ type AdminRepository interface {
 	DeleteSubmission(ctx context.Context, id uuid.UUID) error
 	CreateProblemWithTestCases(ctx context.Context, p *models.Problem, testCases []models.TestCase) (*models.Problem, error)
 	UpdateProblem(ctx context.Context, id uuid.UUID, p *models.Problem) (*models.Problem, error)
+	UpdateProblemWithTestCases(ctx context.Context, id uuid.UUID, p *models.Problem, testCases []models.TestCase) (*models.Problem, error)
 	DeleteProblem(ctx context.Context, id uuid.UUID) error
 	GetAcceptedSubmissionsForProblem(ctx context.Context, problemID uuid.UUID) ([]models.AcceptedSubmission, error)
 }
@@ -144,6 +145,62 @@ func (r *pgAdminRepository) UpdateProblem(ctx context.Context, id uuid.UUID, p *
 	if err != nil {
 		return nil, fmt.Errorf("update problem: %w", err)
 	}
+	return p, nil
+}
+
+func (r *pgAdminRepository) UpdateProblemWithTestCases(ctx context.Context, id uuid.UUID, p *models.Problem, testCases []models.TestCase) (*models.Problem, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `
+		UPDATE problems
+		SET title = $1, description = $2, stdin = $3, expected_output = $4, difficulty_score = $5
+		WHERE id = $6
+		RETURNING id, title, description, COALESCE(stdin, ''), COALESCE(expected_output, ''), difficulty_score, created_at`
+
+	err = tx.QueryRow(ctx, query, p.Title, p.Description, p.Stdin, p.ExpectedOutput, p.DifficultyScore, id).Scan(
+		&p.ID, &p.Title, &p.Description, &p.Stdin, &p.ExpectedOutput, &p.DifficultyScore, &p.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update problem: %w", err)
+	}
+
+	if len(testCases) > 0 {
+		if _, err := tx.Exec(ctx, `DELETE FROM test_cases WHERE problem_id = $1`, id); err != nil {
+			return nil, fmt.Errorf("delete old test cases: %w", err)
+		}
+
+		batch := &pgx.Batch{}
+		for idx, tc := range testCases {
+			rank := tc.DifficultyRank
+			if rank <= 0 {
+				rank = idx + 1
+			}
+			batch.Queue(`
+				INSERT INTO test_cases (problem_id, stdin, expected_output, difficulty_rank, is_sample)
+				VALUES ($1, $2, $3, $4, $5)`,
+				p.ID, tc.Stdin, tc.ExpectedOutput, rank, tc.IsSample,
+			)
+		}
+
+		br := tx.SendBatch(ctx, batch)
+		for i := 0; i < len(testCases); i++ {
+			if _, err := br.Exec(); err != nil {
+				br.Close()
+				return nil, fmt.Errorf("insert test case %d: %w", i, err)
+			}
+		}
+		br.Close()
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit tx: %w", err)
+	}
+
+	p.TestCases = testCases
 	return p, nil
 }
 

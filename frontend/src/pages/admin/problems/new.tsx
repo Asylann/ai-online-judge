@@ -207,7 +207,11 @@ export default function AdminProblemNewPage() {
       }
 
       setTimeout(() => {
-        router.push("/admin/problems");
+        if (isEditing && typeof id === "string") {
+          router.push(`/admin/problems/${id}`);
+        } else {
+          router.push("/admin/problems");
+        }
       }, 1200);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to save problem. Please check your admin permissions.");
