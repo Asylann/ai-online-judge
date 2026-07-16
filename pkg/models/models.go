@@ -18,9 +18,19 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }
 
+// LeaderboardEntry represents a user's rank and score on the global leaderboard.
+type LeaderboardEntry struct {
+	Rank     int       `json:"rank"`
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
+	Score    int       `json:"score"`
+}
+
 // Problem represents an algorithmic task stored in the system.
 type Problem struct {
 	ID              uuid.UUID  `json:"id" db:"id"`
+	ModuleID        *uuid.UUID `json:"module_id,omitempty" db:"module_id"`
+	SequentialOrder int        `json:"sequential_order" db:"sequential_order"`
 	Title           string     `json:"title" db:"title"`
 	Description     string     `json:"description" db:"description"`
 	Difficulty      string     `json:"difficulty" db:"difficulty"` // "easy" | "medium" | "hard"
@@ -33,6 +43,23 @@ type Problem struct {
 	ExpectedOutput  string     `json:"expected_output" db:"expected_output"` // sample only
 	TestCases       []TestCase `json:"test_cases,omitempty" db:"-"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+}
+
+// ProblemWithStatus extends Problem with curriculum progression status (is_locked, is_solved).
+type ProblemWithStatus struct {
+	Problem
+	IsLocked bool `json:"is_locked"`
+	IsSolved bool `json:"is_solved"`
+}
+
+// Module represents a curriculum learning path or grouping of problems.
+type Module struct {
+	ID              uuid.UUID           `json:"id" db:"id"`
+	Title           string              `json:"title" db:"title"`
+	Description     string              `json:"description" db:"description"`
+	SequentialOrder int                 `json:"sequential_order" db:"sequential_order"`
+	Problems        []ProblemWithStatus `json:"problems" db:"-"`
+	CreatedAt       time.Time           `json:"created_at" db:"created_at"`
 }
 
 // TestCase is a single ranked test case for a Problem.
@@ -64,6 +91,8 @@ type Submission struct {
 	// Failure context for Virtual TA Socratic hint generation
 	FailedTestStdin          *string   `json:"failed_test_stdin" db:"failed_test_stdin"`
 	FailedTestExpectedOutput *string   `json:"failed_test_expected_output" db:"failed_test_expected_output"`
+	FailedTestActualOutput   *string   `json:"failed_test_actual_output" db:"failed_test_actual_output"`
+	ErrorOutput              *string   `json:"error_output" db:"error_output"`
 	// effort_based_metrics
 	ExecutionTimeMs          *int      `json:"execution_time_ms" db:"execution_time_ms"`
 	MemoryKB                 *int      `json:"memory_kb" db:"memory_kb"`
@@ -121,6 +150,7 @@ type SubmissionHistoryItem struct {
 	ID                   uuid.UUID `json:"id"`
 	ProblemID            uuid.UUID `json:"problem_id"`
 	ProblemTitle         string    `json:"problem_title"`
+	CodeBase64           string    `json:"code_base64"`
 	Language             string    `json:"language"`
 	Status               string    `json:"status"`
 	TestsPassed          int       `json:"tests_passed"`
@@ -131,4 +161,27 @@ type SubmissionHistoryItem struct {
 	CognitiveEffortIndex float64   `json:"cognitive_effort_index"`
 	AIHintText           string    `json:"ai_hint_text"`
 	CreatedAt            time.Time `json:"created_at"`
+}
+
+// AcceptedSubmission represents an accepted submission fetched for AST similarity comparison.
+type AcceptedSubmission struct {
+	ID          uuid.UUID `json:"id" db:"id"`
+	UserID      uuid.UUID `json:"user_id" db:"user_id"`
+	Username    string    `json:"username" db:"username"`
+	CodeBase64  string    `json:"code_base64" db:"code_base64"`
+	ASTSnapshot *string   `json:"ast_snapshot" db:"ast_snapshot"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+}
+
+// SubmissionSimilarityPair represents a high-similarity pair between two different users for integrity checks.
+type SubmissionSimilarityPair struct {
+	UserAID         uuid.UUID `json:"user_a_id"`
+	UserAUsername   string    `json:"user_a_username"`
+	SubmissionAID   uuid.UUID `json:"submission_a_id"`
+	SubmissionACode string    `json:"submission_a_code"` // Base64 code
+	UserBID         uuid.UUID `json:"user_b_id"`
+	UserBUsername   string    `json:"user_b_username"`
+	SubmissionBID   uuid.UUID `json:"submission_b_id"`
+	SubmissionBCode string    `json:"submission_b_code"` // Base64 code
+	SimilarityScore float64   `json:"similarity_score"`  // 0.0 to 1.0 (e.g., 0.92 for 92%)
 }

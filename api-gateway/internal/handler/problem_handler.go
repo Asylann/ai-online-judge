@@ -9,19 +9,36 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/api-gateway/internal/service"
 )
 
+// OTELSubmissionMiddleware returns a Gin middleware that starts an OpenTelemetry
+// span for POST /api/submissions and attaches the traced context to c.Request.Context().
+func OTELSubmissionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tracer := otel.Tracer("api-gateway")
+		parentCtx := otel.GetTextMapPropagator().Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+		ctx, span := tracer.Start(parentCtx, "POST /api/submissions")
+		defer span.End()
+
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
 // ProblemHandler handles HTTP routes for the problems domain.
 type ProblemHandler struct {
-	problemSvc service.ProblemService
+	problemSvc        service.ProblemService
+	dailyChallengeSvc service.DailyChallengeService
 }
 
 // NewProblemHandler constructs a ProblemHandler. Called from main.go (DI root).
-func NewProblemHandler(problemSvc service.ProblemService) *ProblemHandler {
-	return &ProblemHandler{problemSvc: problemSvc}
+func NewProblemHandler(problemSvc service.ProblemService, dailyChallengeSvc service.DailyChallengeService) *ProblemHandler {
+	return &ProblemHandler{problemSvc: problemSvc, dailyChallengeSvc: dailyChallengeSvc}
 }
 
 // ListProblems handles GET /api/v1/problems
@@ -39,6 +56,21 @@ func (h *ProblemHandler) ListProblems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"problems": problems, "count": len(problems)})
+}
+
+// GetDailyChallenge handles GET /api/v1/problems/daily
+// Returns the currently featured 24h problem from Redis cache or PostgreSQL fallback.
+func (h *ProblemHandler) GetDailyChallenge(c *gin.Context) {
+	if h.dailyChallengeSvc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "daily challenge service not configured"})
+		return
+	}
+	problem, err := h.dailyChallengeSvc.GetDailyChallengeProblem(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch daily challenge"})
+		return
+	}
+	c.JSON(http.StatusOK, problem)
 }
 
 // GetProblem handles GET /api/v1/problems/:id
@@ -263,6 +295,8 @@ func RegisterRoutes(
 	problemH *ProblemHandler,
 	submissionH *SubmissionHandler,
 	adminH *AdminHandler,
+	leaderboardH *LeaderboardHandler,
+	moduleH *ModuleHandler,
 	jwtSecret string,
 ) {
 	// Register route groups across /api/v1, /api, and root (/) prefixes
@@ -270,6 +304,7 @@ func RegisterRoutes(
 	for _, prefix := range []string{"/api/v1/problems", "/api/problems", "/problems"} {
 		g := r.Group(prefix)
 		g.GET("", problemH.ListProblems)
+		g.GET("/daily", problemH.GetDailyChallenge)
 		g.GET("/:id", problemH.GetProblem)
 		g.GET("/:id/recommendation", RequireAuth(jwtSecret), problemH.GetRecommendation)
 	}
@@ -286,7 +321,7 @@ func RegisterRoutes(
 		g := r.Group(prefix)
 		g.Use(RequireAuth(jwtSecret))
 		g.GET("", submissionH.ListSubmissions)
-		g.POST("", submissionH.SubmitCode)
+		g.POST("", OTELSubmissionMiddleware(), submissionH.SubmitCode)
 		g.GET("/:id", submissionH.GetSubmission)
 	}
 
@@ -297,6 +332,23 @@ func RegisterRoutes(
 		g.GET("/:id/submissions", submissionH.ListUserSubmissions)
 	}
 
+	// Leaderboard routes (/api/v1/leaderboard, /api/leaderboard, /leaderboard)
+	if leaderboardH != nil {
+		for _, prefix := range []string{"/api/v1/leaderboard", "/api/leaderboard", "/leaderboard"} {
+			g := r.Group(prefix)
+			g.GET("", leaderboardH.GetLeaderboard)
+		}
+	}
+
+	// Module routes (/api/v1/modules, /api/modules, /modules)
+	if moduleH != nil {
+		for _, prefix := range []string{"/api/v1/modules", "/api/modules", "/modules"} {
+			g := r.Group(prefix)
+			g.Use(OptionalAuth(jwtSecret))
+			g.GET("", moduleH.ListModules)
+		}
+	}
+
 	// Admin protected routes (/api/v1/admin, /api/admin, /admin)
 	if adminH != nil {
 		for _, prefix := range []string{"/api/v1/admin", "/api/admin", "/admin"} {
@@ -305,6 +357,7 @@ func RegisterRoutes(
 			g.GET("/users", adminH.ListUsers)
 			g.DELETE("/users/:id", adminH.DeleteUser)
 			g.DELETE("/submissions/:id", adminH.DeleteSubmission)
+			g.GET("/submissions/similarity", adminH.CheckSubmissionSimilarity)
 			g.POST("/problems", adminH.CreateProblem)
 			g.PUT("/problems/:id", adminH.UpdateProblem)
 			g.DELETE("/problems/:id", adminH.DeleteProblem)

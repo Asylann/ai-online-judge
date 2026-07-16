@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Sparkles, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import { BookOpen, Sparkles, AlertCircle, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 
 export interface SocraticHint {
   hint_text: string;
@@ -22,9 +22,11 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
   isLoading = false,
   onDismiss,
 }) => {
+  const isEvaluating = isLoading || verdict === "Evaluating inside Sandbox (Isolate cgroup)..." || verdict === "Pending" || verdict === "In Queue" || verdict === "Processing";
+
   return (
     <AnimatePresence mode="wait">
-      {(hint || isLoading || Boolean(verdict)) && (
+      {(hint || isEvaluating || Boolean(verdict)) && (
         <motion.div
           key="virtual-ta-panel"
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -55,36 +57,45 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
               </div>
             </div>
 
-            {hint?.cognitive_effort_index !== undefined && (
+            {hint?.cognitive_effort_index !== undefined && !isEvaluating && (
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase font-mono tracking-wider">
+                <span className="text-[10px] font-mono uppercase text-slate-400 block">
                   Cognitive Effort Index
                 </span>
-                <span className="text-xs font-mono font-semibold text-slate-800">
+                <span className="text-sm font-mono font-bold text-amber-800">
                   {hint.cognitive_effort_index.toFixed(2)}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="py-8 flex flex-col items-center justify-center space-y-3 text-slate-500">
-              <Sparkles className="w-5 h-5 animate-spin text-amber-600" />
-              <p className="text-xs tracking-tight text-center">
-                Analyzing AST structural deviations & querying Socratic RAG pipeline...
-              </p>
+          {/* Body Content */}
+          {isEvaluating ? (
+            /* Loading / Sandbox Evaluation State */
+            <div className="py-6 flex items-center space-x-3.5 text-amber-900 bg-amber-50/50 p-4 rounded-lg border border-amber-200/60">
+              <Loader2 className="w-5 h-5 text-amber-700 animate-spin flex-shrink-0" />
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono">
+                  Evaluating inside Isolate cgroup Sandbox...
+                </h4>
+                <p className="text-xs mt-1 text-slate-600 leading-relaxed font-sans">
+                  Running your code against 10 ranked test cases. AST structural analysis and Virtual TA are monitoring for deviations.
+                </p>
+              </div>
             </div>
           ) : verdict === "Accepted" ? (
             /* Accepted State */
-            <div className="py-4 flex items-start space-x-3 text-emerald-800 bg-emerald-50/60 p-4 rounded-lg border border-emerald-200/50">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono">
-                  Verdict: Accepted
+            <div className="py-5 flex items-start space-x-3.5 text-emerald-950 bg-emerald-900/10 p-5 rounded-xl border border-emerald-800/30">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono text-emerald-900">
+                  Virtual TA Evaluation: Accepted 🎉
                 </h4>
-                <p className="text-xs mt-1 text-emerald-700 leading-relaxed">
-                  Excellent work! Your algorithm executed inside the isolate sandbox with optimal structural complexity and zero logical deviations.
+                <p className="text-xs text-emerald-800 leading-relaxed font-sans">
+                  Remarkable achievement! Your algorithm executed inside the isolate Linux cgroup with optimal structural complexity and zero logical deviations.
+                </p>
+                <p className="text-[11px] font-mono text-emerald-700 pt-1 border-t border-emerald-800/15">
+                  💡 Pedagogical Next Step: You have mastered this structural concept. We recommend advancing to a higher Zone of Proximal Development (ZPD) problem to expand your cognitive problem-solving toolkit.
                 </p>
               </div>
             </div>

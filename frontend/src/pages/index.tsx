@@ -3,6 +3,8 @@ import Link from "next/link";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { EffortDashboard, SubmissionMetric } from "@/components/EffortDashboard";
+import { Leaderboard } from "@/components/Leaderboard";
+import { ChallengeOfTheDay } from "@/components/ChallengeOfTheDay";
 import { ArrowUpRight, BookOpen, Sparkles, Activity, Code, Award, Search, Filter } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -227,6 +229,9 @@ export default function DashboardPage() {
         </motion.p>
       </section>
 
+      {/* Challenge of the Day (24h Featured Banner) */}
+      <ChallengeOfTheDay />
+
       {/* Algorithmic Problems List */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-900/10">
@@ -345,6 +350,26 @@ export default function DashboardPage() {
         <div className="bg-ivory-100 p-6 sm:p-8 rounded-2xl border border-slate-900/10 shadow-sm">
           <EffortDashboard metrics={metrics} />
         </div>
+      </section>
+
+      {/* Engagement & Gamification (Leaderboard Section) */}
+      <section id="leaderboard" className="space-y-6 pt-6 pb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-900/10">
+          <div>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-amber-800 block mb-1">
+              Phase 11: Engagement & Gamification
+            </span>
+            <h2 className="text-2xl font-serif font-semibold text-slate-900 tracking-tight flex items-center">
+              <Award className="w-5 h-5 mr-2.5 text-slate-700" />
+              Real-Time Global Rankings
+            </h2>
+          </div>
+          <span className="text-xs font-sans text-slate-500 max-w-xs">
+            Powered by Redis O(log N) Sorted Sets (ZADD / ZRANGE) tracking solved problems and points across the platform.
+          </span>
+        </div>
+
+        <Leaderboard />
       </section>
     </div>
   );

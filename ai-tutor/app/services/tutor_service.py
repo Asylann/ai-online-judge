@@ -74,6 +74,9 @@ class TutorService:
         # The specific hidden test case that caused the failure — critical for precise Socratic hints
         failed_test_stdin = data.get("failed_test_stdin") or ""
         failed_test_expected = data.get("failed_test_expected_output") or ""
+        failed_test_actual = data.get("failed_test_actual_output") or ""
+        error_output = data.get("error_output") or ""
+        status = data.get("status") or ""
 
         if data.get("status") == "Accepted":
             logger.info(f"[TutorService] Submission {submission_id} is Accepted. No Socratic error intervention needed.")
@@ -98,7 +101,10 @@ class TutorService:
             tests_passed=tests_passed,
             tests_total=tests_total,
             failed_test_stdin=failed_test_stdin,
-            failed_test_expected=failed_test_expected
+            failed_test_expected=failed_test_expected,
+            failed_test_actual=failed_test_actual,
+            error_output=error_output,
+            status=status
         )
 
         # 4. Compute composite Educational Data Mining (EDM) cognitive_effort_index
@@ -140,15 +146,42 @@ class TutorService:
         tests_passed: int = 0,
         tests_total: int = 0,
         failed_test_stdin: str = "",
-        failed_test_expected: str = ""
+        failed_test_expected: str = "",
+        failed_test_actual: str = "",
+        error_output: str = "",
+        status: str = ""
     ) -> str:
         """
         Query OpenAI GPT-4o with strict Virtual TA directives.
-        If API key is placeholder or request fails, return a safe pedagogical fallback.
+        If API key is placeholder or request fails, return a code-aware pedagogical fallback.
         """
         # If running in offline test / scaffold mode without real key
         if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY.startswith("sk-placeholder"):
-            logger.info(f"[TutorService] Offline mode: generating deterministic Socratic hint for {submission_id}")
+            logger.info(f"[TutorService] Offline mode: generating code-aware Socratic hint for {submission_id}")
+            clean_code = source_code.strip()
+            if not clean_code:
+                return (
+                    f"Virtual TA (Socratic Hint): Your {language} editor is empty! To solve '{problem_title}', "
+                    f"start by writing your function signature or main entry point and carefully check what inputs to read."
+                )
+            if status == "CE" or (error_output and "Compilation Error" in error_output):
+                err_msg = error_output if error_output else "Check your syntax."
+                return (
+                    f"Virtual TA (Socratic Hint): Your {language} code failed to compile with error: '{err_msg}'. "
+                    f"Inspect the lines around your variable definitions and syntax near the error."
+                )
+            if status == "RE" or (error_output and "Runtime Error" in error_output):
+                err_msg = error_output if error_output else "Check for runtime crashes."
+                return (
+                    f"Virtual TA (Socratic Hint): Your {language} code crashed during execution on input '{failed_test_stdin}'. Error details: '{err_msg}'. "
+                    f"Are you accessing an out-of-bounds array index or dividing by zero?"
+                )
+            if failed_test_stdin:
+                actual_str = f" but your code produced '{failed_test_actual}'" if failed_test_actual else ""
+                return (
+                    f"Virtual TA (Socratic Hint): On test input '{failed_test_stdin}', the expected output is '{failed_test_expected}'{actual_str}. "
+                    f"Trace your code's logic on this exact input to see where your variable state deviates."
+                )
             return (
                 f"Virtual TA (Socratic Hint): Consider how your loop bounds and data structures in {language} "
                 f"handle edge cases for '{problem_title}'. Notice any structural deviation in condition termination?"
@@ -156,18 +189,21 @@ class TutorService:
 
         # Build the failure context block for the Virtual TA prompt
         failure_context = ""
-        score_line = f"Score: {tests_passed}/{tests_total} test cases passed."
-        if failed_test_stdin:
+        score_line = f"Score: {tests_passed}/{tests_total} test cases passed. Verdict Status: {status}"
+        if failed_test_stdin or error_output:
+            actual_section = failed_test_actual if failed_test_actual else (error_output if error_output else "(No output)")
             failure_context = f"""
 
 Test Score: {score_line}
-The student's code FAILED on this specific hidden test input:
+The student's code FAILED on this specific hidden test case:
 --- Failed Test Input ---
 {failed_test_stdin}
+--- Student's Actual Output / Error Details ---
+{actual_section}
 --- Expected Output ---
 {failed_test_expected}
 --- End of Test Context ---
-Use this specific failing input to guide your Socratic hint. Point to what edge case the student's code is missing."""
+Use the student's exact source code above AND this specific failing input/output context to guide your Socratic hint. Point directly to what logical flaw or missing boundary condition caused this discrepancy without revealing the corrected solution."""
         else:
             failure_context = f"\n{score_line}"
 

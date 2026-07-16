@@ -15,6 +15,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ai-online-judge/ast-service/internal/service"
 )
@@ -87,6 +90,13 @@ func (h *ASTHandler) Analyze(c *gin.Context) {
 		return
 	}
 
+	parentCtx := otel.GetTextMapPropagator().Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
+	tracer := otel.Tracer("ast-service")
+	reqCtx, span := tracer.Start(parentCtx, "POST /api/analyze")
+	defer span.End()
+
+	spanCtx := trace.SpanContextFromContext(reqCtx)
+
 	// Fire the Educational Data Mining (EDM) analysis pipeline asynchronously.
 	// The goroutine:
 	//   1. Fetches code_base64 from PostgreSQL
@@ -95,10 +105,14 @@ func (h *ASTHandler) Analyze(c *gin.Context) {
 	//   4. Persists ast_complexity_score + ast_snapshot (JSONB) to submissions table
 	//   5. Notifies AI Tutor (Virtual TA) for Socratic hint generation
 	go func() {
-		// Use a background context — the HTTP request context is cancelled when
-		// the 202 response is sent, but we want analysis to continue after that.
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		// Preserve trace context while avoiding cancellation when the 202 response is sent.
+		bgCtx := trace.ContextWithSpanContext(context.Background(), spanCtx)
+		ctx, cancel := context.WithTimeout(bgCtx, 30*time.Second)
 		defer cancel()
+
+		ctx, asyncSpan := tracer.Start(ctx, "Analyze_Submission")
+		defer asyncSpan.End()
+
 		if err := h.astSvc.Analyze(ctx, submissionID); err != nil {
 			log.Printf("[ast-service] Analyze goroutine error for submission %s: %v", submissionID, err)
 		}

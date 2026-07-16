@@ -14,25 +14,43 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ai-online-judge/api-gateway/internal/config"
 	"github.com/ai-online-judge/api-gateway/internal/handler"
 	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/api-gateway/internal/service"
 	"github.com/ai-online-judge/pkg/database"
+	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
 	// ── Step 1: Load Configuration ──────────────────────────────────────────────
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("[api-gateway] Config error: %v", err)
 	}
+
+	// ── Step 1.5: Initialize OpenTelemetry Tracing ──────────────────────────────
+	tracerProvider, err := telemetry.InitTracer("api-gateway", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Fatalf("[api-gateway] Failed to initialize tracer: %v", err)
+	}
+	defer func() {
+		if err := tracerProvider.Shutdown(ctx); err != nil {
+			log.Printf("[api-gateway] Error shutting down tracer provider: %v", err)
+		}
+	}()
+	log.Printf("[api-gateway] OpenTelemetry initialized (endpoint: %s)", cfg.JaegerEndpoint)
 
 	// ── Step 2: Establish External Connections ───────────────────────────────────
 
@@ -82,25 +100,30 @@ func main() {
 	// ── Step 3: Dependency Injection (top-down: repo → service → handler) ────────
 
 	// Repository layer — owns all SQL queries
-	userRepo       := repository.NewUserRepository(db)
-	problemRepo    := repository.NewProblemRepository(db)
-	submissionRepo := repository.NewSubmissionRepository(db)
-	adminRepo      := repository.NewAdminRepository(db)
+	userRepo        := repository.NewUserRepository(db)
+	problemRepo     := repository.NewProblemRepository(db)
+	submissionRepo  := repository.NewSubmissionRepository(db)
+	adminRepo       := repository.NewAdminRepository(db)
+	leaderboardRepo := repository.NewLeaderboardRepository(rdb, db)
+	moduleRepo      := repository.NewModuleRepository(db)
 
 	// Service layer — orchestrates business logic + RabbitMQ publishing
-	authSvc       := service.NewAuthService(userRepo, cfg.JWTSecret)
-	problemSvc    := service.NewProblemService(problemRepo)
-	submissionSvc := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
-	adminSvc      := service.NewAdminService(adminRepo, cfg.AITutorURL)
+	authSvc           := service.NewAuthService(userRepo, cfg.JWTSecret)
+	problemSvc        := service.NewProblemService(problemRepo)
+	submissionSvc     := service.NewSubmissionService(submissionRepo, problemRepo, amqpCh)
+	adminSvc          := service.NewAdminService(adminRepo, cfg.AITutorURL)
+	leaderboardSvc    := service.NewLeaderboardService(leaderboardRepo)
+	moduleSvc         := service.NewModuleService(moduleRepo, problemRepo)
+	dailyChallengeSvc := service.NewDailyChallengeService(problemRepo, rdb)
+	dailyChallengeSvc.StartDailyTicker(ctx)
 
 	// Handler layer — HTTP parsing and response writing only
-	authHandler       := handler.NewAuthHandler(authSvc)
-	problemHandler    := handler.NewProblemHandler(problemSvc)
-	submissionHandler := handler.NewSubmissionHandler(submissionSvc, userRepo)
-	adminHandler      := handler.NewAdminHandler(adminSvc)
-
-	// Suppress unused variable warning for rdb (used by future JWT middleware)
-	_ = rdb
+	authHandler        := handler.NewAuthHandler(authSvc)
+	problemHandler     := handler.NewProblemHandler(problemSvc, dailyChallengeSvc)
+	submissionHandler  := handler.NewSubmissionHandler(submissionSvc, userRepo)
+	adminHandler       := handler.NewAdminHandler(adminSvc)
+	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)
+	moduleHandler      := handler.NewModuleHandler(moduleSvc)
 
 	// ── Step 4: Configure Gin and Register Routes ────────────────────────────────
 	r := gin.New()
@@ -114,8 +137,11 @@ func main() {
 		})
 	})
 
+	// Prometheus metrics scraping endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	// Wire all route groups
-	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, cfg.JWTSecret)
+	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, leaderboardHandler, moduleHandler, cfg.JWTSecret)
 
 
 	// ── Step 5: Start HTTP Server ────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { AdminLayout } from "@/components/AdminLayout";
-import { PlusCircle, Trash2, Edit3, FileCode, RefreshCw, AlertCircle, Clock, Cpu } from "lucide-react";
+import { PlusCircle, Trash2, Edit3, FileCode, RefreshCw, AlertCircle, Clock, Cpu, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -191,6 +191,13 @@ export default function AdminProblemsIndexPage() {
                         </td>
                         <td className="py-3.5 px-5 text-right">
                           <div className="flex items-center justify-end space-x-2">
+                            <Link
+                              href={`/admin/problems/${p.id}`}
+                              title="AST Integrity Check & Plagiarism Detection"
+                              className="p-1.5 rounded text-amber-800 hover:text-amber-950 hover:bg-amber-900/10 transition-colors"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                            </Link>
                             <Link
                               href={`/admin/problems/new?id=${p.id}`}
                               title="Edit Problem"

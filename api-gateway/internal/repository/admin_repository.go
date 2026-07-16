@@ -21,6 +21,7 @@ type AdminRepository interface {
 	CreateProblemWithTestCases(ctx context.Context, p *models.Problem, testCases []models.TestCase) (*models.Problem, error)
 	UpdateProblem(ctx context.Context, id uuid.UUID, p *models.Problem) (*models.Problem, error)
 	DeleteProblem(ctx context.Context, id uuid.UUID) error
+	GetAcceptedSubmissionsForProblem(ctx context.Context, problemID uuid.UUID) ([]models.AcceptedSubmission, error)
 }
 
 type pgAdminRepository struct {
@@ -167,4 +168,30 @@ func (r *pgAdminRepository) DeleteProblem(ctx context.Context, id uuid.UUID) err
 		return fmt.Errorf("problem not found")
 	}
 	return tx.Commit(ctx)
+}
+
+func (r *pgAdminRepository) GetAcceptedSubmissionsForProblem(ctx context.Context, problemID uuid.UUID) ([]models.AcceptedSubmission, error) {
+	query := `
+		SELECT s.id, s.user_id, u.username, s.code_base64, s.ast_snapshot::text, s.created_at
+		FROM submissions s
+		JOIN users u ON s.user_id = u.id
+		WHERE s.problem_id = $1 AND s.status = 'Accepted'
+		ORDER BY s.created_at DESC`
+	rows, err := r.db.Query(ctx, query, problemID)
+	if err != nil {
+		return nil, fmt.Errorf("GetAcceptedSubmissionsForProblem query: %w", err)
+	}
+	defer rows.Close()
+
+	subs := make([]models.AcceptedSubmission, 0)
+	for rows.Next() {
+		var sub models.AcceptedSubmission
+		var snap *string
+		if err := rows.Scan(&sub.ID, &sub.UserID, &sub.Username, &sub.CodeBase64, &snap, &sub.CreatedAt); err != nil {
+			return nil, fmt.Errorf("GetAcceptedSubmissionsForProblem scan: %w", err)
+		}
+		sub.ASTSnapshot = snap
+		subs = append(subs, sub)
+	}
+	return subs, rows.Err()
 }

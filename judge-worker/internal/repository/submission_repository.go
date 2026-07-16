@@ -22,6 +22,8 @@ type VerdictUpdate struct {
 	TestsTotal               int     // total test cases attempted
 	FailedTestStdin          string  // stdin of the first failing test case (for Virtual TA context)
 	FailedTestExpectedOutput string  // expected output of the first failing test case
+	FailedTestActualOutput   string  // actual stdout produced by the failing test case
+	ErrorOutput              string  // stderr or compile error produced
 	ExecutionTimeMs          int     // CPU time from last test case run (effort_based_metric)
 	MemoryKB                 int     // Peak RAM from last test case run (effort_based_metric)
 }
@@ -31,6 +33,10 @@ type SubmissionRepository interface {
 	// UpdateVerdict persists the multi-test verdict and effort_based_metrics to PostgreSQL.
 	// Called after all test cases complete — all attempts are logged (EDM).
 	UpdateVerdict(ctx context.Context, v VerdictUpdate) error
+
+	// HasPriorAcceptedSubmission checks if the user already solved this exact problem previously (status = 'Accepted').
+	// Used by Executor to award +10 leaderboard points only on the first solve.
+	HasPriorAcceptedSubmission(ctx context.Context, userID, problemID, currentSubmissionID uuid.UUID) (bool, error)
 }
 
 // TestCaseRepository defines the contract for fetching ranked test cases.
@@ -72,8 +78,10 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 			tests_total                 = $4,
 			failed_test_stdin           = NULLIF($5, ''),
 			failed_test_expected_output = NULLIF($6, ''),
-			execution_time_ms           = $7,
-			memory_kb                   = $8
+			failed_test_actual_output   = NULLIF($7, ''),
+			error_output                = NULLIF($8, ''),
+			execution_time_ms           = $9,
+			memory_kb                   = $10
 		WHERE id = $1`
 
 	tag, err := r.db.Exec(ctx, query,
@@ -83,6 +91,8 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 		v.TestsTotal,
 		v.FailedTestStdin,
 		v.FailedTestExpectedOutput,
+		v.FailedTestActualOutput,
+		v.ErrorOutput,
 		v.ExecutionTimeMs,
 		v.MemoryKB,
 	)
@@ -93,6 +103,18 @@ func (r *pgSubmissionRepository) UpdateVerdict(ctx context.Context, v VerdictUpd
 		return fmt.Errorf("submission_repository.UpdateVerdict: no row found for id %s", v.SubmissionID)
 	}
 	return nil
+}
+
+// HasPriorAcceptedSubmission returns true if the user has an existing Accepted submission for this problem other than currentSubmissionID.
+func (r *pgSubmissionRepository) HasPriorAcceptedSubmission(ctx context.Context, userID, problemID, currentSubmissionID uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM submissions
+			WHERE user_id = $1 AND problem_id = $2 AND status = 'Accepted' AND id != $3
+		)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, userID, problemID, currentSubmissionID).Scan(&exists)
+	return exists, err
 }
 
 // GetTestCasesForProblem fetches all ranked test cases for a given problem,

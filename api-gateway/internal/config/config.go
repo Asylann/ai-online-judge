@@ -28,18 +28,22 @@ type Config struct {
 
 	// AI Tutor service URL for proxying AI generation requests
 	AITutorURL string
+
+	// JaegerEndpoint for OpenTelemetry OTLP HTTP trace exporting
+	JaegerEndpoint string
 }
 
 // Load reads environment variables and returns a validated Config.
 // Returns an error if any required variable is missing.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:        getEnvOrDefault("PORT", "8080"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		RedisURL:    os.Getenv("REDIS_URL"),
-		RabbitMQURL: os.Getenv("RABBITMQ_URL"),
-		JWTSecret:   os.Getenv("JWT_SECRET"),
-		AITutorURL:  getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
+		Port:           getEnvOrDefault("PORT", "8080"),
+		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		RedisURL:       os.Getenv("REDIS_URL"),
+		RabbitMQURL:    os.Getenv("RABBITMQ_URL"),
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		AITutorURL:     getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
+		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
 	}
 
 
