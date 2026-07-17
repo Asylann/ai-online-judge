@@ -4,6 +4,7 @@ import Head from "next/head";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -13,12 +14,15 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" type="image/svg+xml" href="/logo.svg" />
         <meta name="description" content="AI-Powered Online Judge with Socratic Virtual TA & Effort-Based Educational Data Mining for Prof. Yutaka Watanobe's Lab." />
       </Head>
-      <div className="min-h-screen flex flex-col bg-ivory-100 text-slate-900 selection:bg-amber-300 selection:text-slate-950">
-        <Navbar />
-        <main className="flex-1 flex flex-col">
-          <Component {...pageProps} />
-        </main>
-        <Footer />
+      <div className="min-h-screen relative flex flex-col bg-ivory-100 text-slate-900 selection:bg-amber-300 selection:text-slate-950">
+        <AnimatedBackground />
+        <div className="relative z-10 flex flex-col flex-1">
+          <Navbar />
+          <main className="flex-1 flex flex-col">
+            <Component {...pageProps} />
+          </main>
+          <Footer />
+        </div>
       </div>
     </AuthProvider>
   );
