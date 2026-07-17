@@ -1,0 +1,296 @@
+# ============================================================
+# AI Online Judge — Polyglot Monorepo Production Orchestration
+# ============================================================
+#
+# Target Architecture: Prof. Yutaka Watanobe's Laboratory (University of Aizu)
+# Production Domain: aioj.studio
+#
+# Security & Network Isolation:
+#   - ONLY the Nginx reverse proxy exposes ports (80 / 443) to the host machine.
+#   - ALL microservices (Go, Python, Next.js, PostgreSQL, Redis, RabbitMQ) reside
+#     strictly inside the isolated Docker internal bridge network (`ai-judge-network`).
+#   - Zero direct external access to databases, message queues, or internal API ports.
+#
+# Usage:
+#   Start cluster:       docker-compose -f deployments/docker-compose.prod.yml up --build -d
+#   View logs:           docker-compose -f deployments/docker-compose.prod.yml logs -f
+#   Stop cluster:        docker-compose -f deployments/docker-compose.prod.yml down -v
+
+name: ai-online-judge-prod
+
+services:
+
+  # ── Nginx Reverse Proxy — Single Public Entry Point (aioj.studio) ───────────
+  nginx:
+    build:
+      context: ../nginx
+      dockerfile: Dockerfile
+    container_name: ai_judge_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - api-gateway
+      - websocket-service
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── PostgreSQL — Primary Persistent Store (EDM Schema) ──────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai_judge_postgres
+    environment:
+      POSTGRES_DB:       aionlinejudge
+      POSTGRES_USER:     judge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # Ports removed for production security isolation
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judge -d aionlinejudge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Redis — Cache, Rate Limiting & WebSocket Pub/Sub Backbone ───────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ai_judge_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    # Ports removed for production security isolation
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── RabbitMQ — AMQP Message Broker (ACK/NACK Delivery Guarantees) ───────────
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ai_judge_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: judge
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-changeme}
+    volumes:
+      - rabbitmq_prod_data:/var/lib/rabbitmq
+    # Ports (5672, 15672) removed for production security isolation
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Jaeger — Distributed Tracing Backbone (OTLP HTTP Receiver) ──────────────
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: ai_judge_jaeger
+    # Ports removed for production security isolation
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Prometheus — Time-Series Metrics Scraping Engine ────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai_judge_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_prod_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    # Ports removed for production security isolation
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Grafana — Operational Metrics Dashboards & SLO Monitoring ───────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai_judge_grafana
+    volumes:
+      - grafana_prod_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    # Ports removed for production security isolation
+    depends_on:
+      - prometheus
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Go API Gateway — Central REST Routing & JWT Auth Engine ─────────────────
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: api-gateway/Dockerfile
+    container_name: ai_judge_api_gateway
+    environment:
+      PORT:            "8080"
+      DATABASE_URL:    postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
+      RABBITMQ_URL:    amqp://judge:${RABBITMQ_PASSWORD:-changeme}@rabbitmq:5672/
+      JWT_SECRET:      ${JWT_SECRET:-supersecretjwtkeyforonlinejudgedev}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4318}
+    # Ports removed — proxied exclusively via Nginx (/api/)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Go Judge Worker — AMQP Consumer & Judge0 Sandbox Bridge ─────────────────
+  judge-worker:
+    build:
+      context: ..
+      dockerfile: judge-worker/Dockerfile
+    container_name: ai_judge_worker
+    environment:
+      DATABASE_URL:    postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
+      RABBITMQ_URL:    amqp://judge:${RABBITMQ_PASSWORD:-changeme}@rabbitmq:5672/
+      REDIS_URL:       redis:6379
+      JUDGE0_URL:      ${JUDGE0_URL:-https://ce.judge0.com}
+      AST_SERVICE_URL: http://ast-service:8083
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4318}
+    # Ports removed for production security isolation
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ast-service:
+        condition: service_started
+      jaeger:
+        condition: service_started
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Go AST Service — gotreesitter Complexity Scoring & Structural Analysis ──
+  ast-service:
+    build:
+      context: ..
+      dockerfile: ast-service/Dockerfile
+    container_name: ai_judge_ast_service
+    environment:
+      PORT:            "8083"
+      DATABASE_URL:    postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
+      AI_TUTOR_URL:    http://ai-tutor:8000
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4318}
+    # Ports removed for production security isolation
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-tutor:
+        condition: service_started
+      jaeger:
+        condition: service_started
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Python AI Tutor — Virtual TA (FastAPI + OpenAI GPT-4o RAG Pipeline) ─────
+  ai-tutor:
+    build:
+      context: ../ai-tutor
+      dockerfile: Dockerfile
+    container_name: ai_judge_ai_tutor
+    environment:
+      PORT:           "8000"
+      DATABASE_URL:   postgresql://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge
+      REDIS_URL:      redis://redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder-for-testing}
+      OPENAI_MODEL:   ${OPENAI_MODEL:-gpt-4o}
+    # Ports removed for production security isolation
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Go WebSocket Service — Real-Time Pub/Sub Push Hub ───────────────────────
+  websocket-service:
+    build:
+      context: ..
+      dockerfile: websocket-service/Dockerfile
+    container_name: ai_judge_websocket_service
+    environment:
+      PORT:       "8082"
+      REDIS_URL:  redis:6379
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkeyforonlinejudgedev}
+    # Ports removed — proxied exclusively via Nginx (/ws)
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+  # ── Next.js Frontend — Production Standalone Server ─────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api/v1
+        NEXT_PUBLIC_WS_URL: /ws
+    container_name: ai_judge_frontend
+    environment:
+      PORT:                "3000"
+      NEXT_PUBLIC_API_URL: /api/v1
+      NEXT_PUBLIC_WS_URL:  /ws
+    # Ports removed — proxied exclusively via Nginx (/)
+    depends_on:
+      - api-gateway
+      - websocket-service
+    networks:
+      - ai-judge-network
+    restart: unless-stopped
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  rabbitmq_prod_data:
+    driver: local
+  prometheus_prod_data:
+    driver: local
+  grafana_prod_data:
+    driver: local
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  ai-judge-network:
+    driver: bridge

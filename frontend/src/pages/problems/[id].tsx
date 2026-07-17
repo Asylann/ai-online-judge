@@ -7,8 +7,35 @@ import { CodeEditor } from "@/components/CodeEditor";
 import { VirtualTAPanel, SocraticHint } from "@/components/VirtualTAPanel";
 import { ArrowLeft, Play, Cpu, CheckCircle2, AlertTriangle, Layers, BookOpen, Sparkles, Award } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
+const getApiUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== "") {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/api/v1";
+  }
+  return "http://localhost:8080";
+};
+
+const getWsUrl = (token: string): string => {
+  if (typeof window === "undefined") return "";
+  const envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
+  if (envWsUrl !== undefined && envWsUrl !== "") {
+    if (envWsUrl.startsWith("ws://") || envWsUrl.startsWith("wss://")) {
+      return `${envWsUrl.replace(/\/$/, "")}/ws?token=${token}`;
+    }
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const cleanPath = envWsUrl.startsWith("/") ? envWsUrl : `/${envWsUrl}`;
+    return `${wsProto}//${window.location.host}${cleanPath}?token=${token}`;
+  }
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${wsProto}//${window.location.host}/ws?token=${token}`;
+  }
+  return `ws://localhost:8082/ws?token=${token}`;
+};
+
+const API_URL = getApiUrl();
 
 interface ProblemDetail {
   id: string;
@@ -103,7 +130,7 @@ export default function ProblemWorkspacePage() {
     const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
     if (!token) return;
 
-    const wsUrl = `${WS_URL}/ws?token=${token}`;
+    const wsUrl = getWsUrl(token);
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
