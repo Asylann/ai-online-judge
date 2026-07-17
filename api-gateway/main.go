@@ -21,6 +21,8 @@ import (
 	"github.com/gin-gonic/gin"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ai-online-judge/api-gateway/internal/config"
 	"github.com/ai-online-judge/api-gateway/internal/handler"
@@ -61,6 +63,9 @@ func main() {
 	}
 	defer db.Close()
 	log.Println("[api-gateway] PostgreSQL connected")
+
+	// Auto-seed admin user from environment variables
+	seedAdminUser(ctx, db, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminEmail)
 
 	// Redis — rate limiting + leaderboard cache
 	rdb, err := database.NewRedisClient()
@@ -149,5 +154,28 @@ func main() {
 	log.Printf("[api-gateway] Starting on %s", addr)
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("[api-gateway] Server failed: %v", err)
+	}
+}
+
+func seedAdminUser(ctx context.Context, db *pgxpool.Pool, username, password, email string) {
+	if username == "" || password == "" || email == "" {
+		return
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("[api-gateway] Failed to hash admin password during seed: %v", err)
+		return
+	}
+	query := `
+		INSERT INTO users (id, username, email, password_hash, role, created_at)
+		VALUES (uuid_generate_v4(), $1, $2, $3, 'admin', now())
+		ON CONFLICT (username) DO UPDATE
+		SET role = 'admin', password_hash = $3, email = $2;
+	`
+	_, err = db.Exec(ctx, query, username, email, string(hash))
+	if err != nil {
+		log.Printf("[api-gateway] Notice during admin seed (non-fatal): %v", err)
+	} else {
+		log.Printf("[api-gateway] Verified admin user seeded: username=%s email=%s role=admin", username, email)
 	}
 }

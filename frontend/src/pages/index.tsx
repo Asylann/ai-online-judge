@@ -256,7 +256,7 @@ export default function DashboardPage() {
             transition={{ duration: 0.4 }}
             className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
           >
-            <Sparkles className="w-4 h-4 text-amber-600 animate-spin" />
+            <Activity className="w-4 h-4 text-amber-600 animate-pulse" />
             <span>Society 5.0 Smart Learning & Educational Data Mining</span>
           </motion.div>
 

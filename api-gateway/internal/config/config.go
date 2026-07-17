@@ -31,6 +31,11 @@ type Config struct {
 
 	// JaegerEndpoint for OpenTelemetry OTLP HTTP trace exporting
 	JaegerEndpoint string
+
+	// Admin auto-seeding on startup
+	AdminUsername string
+	AdminPassword string
+	AdminEmail    string
 }
 
 // Load reads environment variables and returns a validated Config.
@@ -44,6 +49,9 @@ func Load() (*Config, error) {
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AITutorURL:     getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
 		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
+		AdminUsername:  getEnvOrDefault("ADMIN_USERNAME", "admin"),
+		AdminPassword:  getEnvOrDefault("ADMIN_PASSWORD", "adminpassword123"),
+		AdminEmail:     getEnvOrDefault("ADMIN_EMAIL", "admin@aioj.studio"),
 	}
 
 

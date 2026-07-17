@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
@@ -22,6 +22,25 @@ import {
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 20);
+
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        setScrollProgress((currentScrollY / totalHeight) * 100);
+      } else {
+        setScrollProgress(0);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Helper to check active route
   const isActive = (path: string) => {
@@ -43,15 +62,35 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-ivory-100/95 backdrop-blur-md border-b-2 border-slate-900/15 shadow-sm transition-all duration-300">
-      {/* Clean Solid Top Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-slate-900" />
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ease-out ${
+        scrolled
+          ? "bg-ivory-100/95 backdrop-blur-md border-b-2 border-slate-900/20 shadow-md py-1"
+          : "bg-ivory-100/80 backdrop-blur-sm border-b border-slate-900/10 shadow-none py-2"
+      }`}
+    >
+      {/* Clean Solid Top Bar that shifts from Slate to Amber on scroll */}
+      <div
+        className={`absolute top-0 left-0 right-0 transition-all duration-500 ${
+          scrolled ? "h-1 bg-amber-500" : "h-1 bg-slate-900"
+        }`}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+      {/* Useful Scroll Reading Progress Bar at the bottom of the navbar */}
+      <div
+        className="absolute bottom-0 left-0 h-[2.5px] bg-amber-500 transition-all duration-150 z-50 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+        style={{ width: `${scrollProgress}%` }}
+      />
+
+      <div
+        className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 transition-all duration-300 ${
+          scrolled ? "h-14" : "h-16"
+        }`}
+      >
         {/* Brand Logo & Name */}
         <Link href="/" className="flex items-center space-x-3 group select-none shrink-0">
-          <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-md transition-transform duration-300 ease-out group-hover:scale-105 overflow-hidden">
-            <img src="/logo.svg" alt="AI Online Judge Logo" className="w-8 h-8 object-contain z-10 drop-shadow" />
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-md transition-transform duration-300 ease-out group-hover:scale-105 overflow-hidden">
+            <img src="/logo.svg" alt="AI Online Judge Logo" className="w-7 h-7 object-contain z-10 drop-shadow" />
             <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
           </div>
 
