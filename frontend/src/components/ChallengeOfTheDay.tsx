@@ -3,6 +3,7 @@ import Link from "next/link";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { Flame, ArrowUpRight, Award } from "lucide-react";
+import { ProblemDescriptionRenderer } from "@/components/ProblemDescriptionRenderer";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
@@ -63,9 +64,9 @@ export const ChallengeOfTheDay: React.FC = () => {
             {problem.title}
           </h3>
 
-          <p className="text-xs sm:text-sm text-slate-600 font-sans line-clamp-2 leading-relaxed tracking-tight">
-            {problem.description}
-          </p>
+          <div className="line-clamp-3">
+            <ProblemDescriptionRenderer content={problem.description} />
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">

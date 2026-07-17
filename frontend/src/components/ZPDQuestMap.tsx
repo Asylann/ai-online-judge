@@ -171,7 +171,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
               Global Mastery Rate
             </span>
             <span className="text-sm font-mono font-black text-slate-900">
-              {processedRealms.reduce((acc, r) => acc + r.completedCount, 0)} / {problems.length || 14} Problems Solved ⭐
+              {processedRealms.reduce((acc, r) => acc + r.completedCount, 0)} / {problems.length || 14} Problems Solved
             </span>
           </div>
         </div>
@@ -225,7 +225,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                           : "bg-slate-800 text-slate-300"
                       }`}
                     >
-                      {isActiveZPD ? "Current ZPD ⭐" : isCompleted ? "Mastered ⭐" : "Fog of War 🔒"}
+                      {isActiveZPD ? "Current ZPD" : isCompleted ? "Mastered" : "Fog of War"}
                     </span>
                   </div>
 
@@ -310,7 +310,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                         : "bg-slate-800 text-slate-300"
                     }`}
                   >
-                    Status: {activeRealmObj.status === "Active ZPD" ? "Active ZPD Exploration 🚀" : activeRealmObj.status}
+                    Status: {activeRealmObj.status === "Active ZPD" ? "Active ZPD Exploration" : activeRealmObj.status}
                   </span>
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-slate-900">
@@ -389,12 +389,12 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                               {isPassed ? (
                                 <>
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  <span>Passed ⭐</span>
+                                  <span>Passed</span>
                                 </>
                               ) : activeRealmObj.status === "Active ZPD" && pIdx === activeRealmObj.completedCount ? (
                                 <>
                                   <Sparkles className="w-3 h-3 mr-1" />
-                                  <span>Next Quest Target 🎯</span>
+                                  <span>Next Quest Target</span>
                                 </>
                               ) : (
                                 <span>Pending Quest</span>

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { CodeEditor } from "@/components/CodeEditor";
 import { VirtualTAPanel, SocraticHint } from "@/components/VirtualTAPanel";
 import { ArrowLeft, Play, Cpu, CheckCircle2, AlertTriangle, Layers, BookOpen, Sparkles, Award } from "lucide-react";
+import { ProblemDescriptionRenderer } from "@/components/ProblemDescriptionRenderer";
 
 const getApiUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== "") {
@@ -390,8 +391,8 @@ export default function ProblemWorkspacePage() {
                 </h1>
               </div>
 
-              <div className="space-y-4 text-xs sm:text-sm text-slate-700 font-sans leading-relaxed whitespace-pre-wrap tracking-tight">
-                {problem.description}
+              <div className="py-1">
+                <ProblemDescriptionRenderer content={problem.description} />
               </div>
 
               {(problem.stdin || problem.expected_output) && (

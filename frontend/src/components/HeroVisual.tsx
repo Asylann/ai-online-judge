@@ -70,7 +70,7 @@ export const HeroVisual: React.FC = () => {
               <span className="text-ivory-100 font-bold">solution.go</span>
               <span className="text-slate-500">— O(N) Monotonic Stack</span>
             </span>
-            <span className="text-amber-400 font-semibold">AST Score: 1.42 ⭐</span>
+            <span className="text-amber-400 font-semibold">AST Score: 1.42</span>
           </div>
 
           {/* Animated Code Lines */}

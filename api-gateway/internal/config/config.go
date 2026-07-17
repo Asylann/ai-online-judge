@@ -49,9 +49,9 @@ func Load() (*Config, error) {
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AITutorURL:     getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
 		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
-		AdminUsername:  getEnvOrDefault("ADMIN_USERNAME", "admin"),
-		AdminPassword:  getEnvOrDefault("ADMIN_PASSWORD", "adminpassword123"),
-		AdminEmail:     getEnvOrDefault("ADMIN_EMAIL", "admin@aioj.studio"),
+		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
+		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
+		AdminEmail:     os.Getenv("ADMIN_EMAIL"),
 	}
 
 

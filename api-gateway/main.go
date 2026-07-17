@@ -166,6 +166,10 @@ func seedAdminUser(ctx context.Context, db *pgxpool.Pool, username, password, em
 		log.Printf("[api-gateway] Failed to hash admin password during seed: %v", err)
 		return
 	}
+	// Clean up any old default fallback 'admin' account if we are seeding a custom admin user from .env (such as 'Mik')
+	if username != "admin" {
+		_, _ = db.Exec(ctx, "DELETE FROM users WHERE username = 'admin' AND email = 'admin@aioj.studio'")
+	}
 	query := `
 		INSERT INTO users (id, username, email, password_hash, role, created_at)
 		VALUES (uuid_generate_v4(), $1, $2, $3, 'admin', now())
