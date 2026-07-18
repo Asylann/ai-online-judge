@@ -22,13 +22,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ai-online-judge/judge-worker/internal/repository"
 	"github.com/ai-online-judge/pkg/models"
-	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 // judge0LanguageIDs maps our canonical language identifiers to Judge0's numeric language IDs.
@@ -295,7 +291,7 @@ func (s *judgeService) Execute(ctx context.Context, task models.JudgeTask) error
 	log.Printf("[judge-worker] Executor: submission %s → final verdict=%s, score=%d/%d",
 		task.SubmissionID, finalVerdict, passed, total)
 
-	telemetry.SubmissionCounter.WithLabelValues(task.Language, finalVerdict).Inc()
+
 
 	// Step 5: Persist verdict + effort_based_metrics to PostgreSQL
 	if err := s.repo.UpdateVerdict(ctx, repository.VerdictUpdate{
@@ -399,10 +395,7 @@ func (s *judgeService) publishVerdictEvent(
 //  4. Save ast_complexity_score + ast_snapshot (JSONB) to submissions table (EDM)
 //  5. Forward to ai-tutor for Socratic hint generation (Virtual TA pipeline)
 func (s *judgeService) triggerASTAnalysis(parentCtx context.Context, submissionID uuid.UUID) {
-	// Preserve trace context while avoiding cancellation when the parent goroutine finishes
-	spanCtx := trace.SpanContextFromContext(parentCtx)
-	bgCtx := trace.ContextWithSpanContext(context.Background(), spanCtx)
-	ctx, cancel := context.WithTimeout(bgCtx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	payload, _ := json.Marshal(analyzeRequest{SubmissionID: submissionID.String()})
@@ -414,7 +407,7 @@ func (s *judgeService) triggerASTAnalysis(parentCtx context.Context, submissionI
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -437,15 +430,6 @@ func (s *judgeService) submitToJudge0WithTestCase(
 	stdinB64 string,
 	expectedB64 string,
 ) (string, error) {
-	start := time.Now()
-	defer func() {
-		telemetry.JudgeLatencyHistogram.Observe(float64(time.Since(start).Milliseconds()))
-	}()
-
-	tracer := otel.Tracer("judge-worker")
-	ctx, span := tracer.Start(ctx, "Execute_Sandbox")
-	defer span.End()
-
 	cpuLimit := float64(task.TimeLimit) / 1000.0
 	if cpuLimit <= 0 {
 		cpuLimit = 2.0 // default 2 seconds if uninitialized
@@ -476,7 +460,7 @@ func (s *judgeService) submitToJudge0WithTestCase(
 		return "", fmt.Errorf("new request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -499,11 +483,6 @@ func (s *judgeService) submitToJudge0WithTestCase(
 // pollResult repeatedly GETs /submissions/:token until the sandbox finishes.
 // Judge0 status IDs 1 (In Queue) and 2 (Processing) mean the Executor is still running.
 func (s *judgeService) pollResult(ctx context.Context, token string) (*judge0Result, error) {
-	start := time.Now()
-	defer func() {
-		telemetry.JudgeLatencyHistogram.Observe(float64(time.Since(start).Milliseconds()))
-	}()
-
 	url := fmt.Sprintf("%s/submissions/%s?base64_encoded=true", s.judge0URL, token)
 
 	// Enforce a maximum polling timeout of 4 seconds per test case when hitting external or slow Judge0
@@ -548,7 +527,7 @@ func (s *judgeService) pollResult(ctx context.Context, token string) (*judge0Res
 // publishes a verdict event to Redis Pub/Sub, ensuring the student's browser never hangs indefinitely.
 func (s *judgeService) failSubmission(ctx context.Context, task models.JudgeTask, status, reason string) {
 	log.Printf("[judge-worker] Executor fallback: failing submission %s (%s): %s", task.SubmissionID, status, reason)
-	telemetry.SubmissionCounter.WithLabelValues(task.Language, status).Inc()
+
 	_ = s.repo.UpdateVerdict(ctx, repository.VerdictUpdate{
 		SubmissionID:             task.SubmissionID,
 		Status:                   status,

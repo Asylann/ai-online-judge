@@ -18,11 +18,9 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 

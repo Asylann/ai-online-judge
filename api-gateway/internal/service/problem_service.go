@@ -11,11 +11,10 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
+
 
 	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/pkg/models"
-	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 // ProblemService defines the contract for problem business logic.
@@ -137,7 +136,7 @@ func (s *submissionService) SubmitCode(
 	}
 
 	headers := make(amqp.Table)
-	otel.GetTextMapPropagator().Inject(ctx, telemetry.AMQPHeadersCarrier(headers))
+
 
 	if err := s.amqpCh.PublishWithContext(ctx,
 		"",            // default exchange
