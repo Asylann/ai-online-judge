@@ -126,7 +126,7 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
                   Remarkable achievement! Your algorithm executed inside the isolate Linux cgroup with optimal structural complexity and zero logical deviations.
                 </p>
                 <p className="text-[11px] font-mono text-emerald-700 pt-1 border-t border-emerald-800/15">
-                  💡 Pedagogical Next Step: You have mastered this structural concept. We recommend advancing to a higher Zone of Proximal Development (ZPD) problem to expand your cognitive problem-solving toolkit.
+                  Pedagogical Next Step: You have mastered this structural concept. We recommend advancing to a higher Zone of Proximal Development (ZPD) problem to expand your cognitive problem-solving toolkit.
                 </p>
               </div>
             </div>

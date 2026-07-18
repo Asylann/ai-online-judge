@@ -31,14 +31,14 @@ export const HeroVisual: React.FC = () => {
         {/* Sandbox & AST Monitor Header */}
         <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
           <div className="flex items-center space-x-3">
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400">
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 overflow-hidden border border-amber-500/30">
               <motion.div
-                animate={{ rotate: 360, scale: [1, 1.2, 1] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Sparkles className="w-5 h-5 text-amber-400" />
+                <Cpu className="w-5 h-5 text-amber-400" />
               </motion.div>
-              <div className="absolute inset-0 rounded-xl border border-amber-400/40 animate-ping opacity-60" />
+              <div className="absolute inset-0 rounded-xl border border-amber-400/40 animate-pulse opacity-60" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
@@ -70,7 +70,7 @@ export const HeroVisual: React.FC = () => {
               <span className="text-ivory-100 font-bold">solution.go</span>
               <span className="text-slate-500">— O(N) Monotonic Stack</span>
             </span>
-            <span className="text-amber-400 font-semibold">AST Score: 1.42 ⭐</span>
+            <span className="text-amber-400 font-semibold">AST Score: 1.42</span>
           </div>
 
           {/* Animated Code Lines */}
@@ -136,7 +136,7 @@ export const HeroVisual: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="p-1 rounded bg-amber-500 text-slate-950">
-                <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                <Terminal className="w-3.5 h-3.5 animate-pulse" />
               </span>
               <span className="text-xs font-serif font-bold text-amber-300">
                 Virtual TA Socratic Intervention Active

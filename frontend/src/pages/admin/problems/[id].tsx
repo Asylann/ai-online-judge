@@ -20,6 +20,7 @@ import {
   Cpu,
   Layers
 } from "lucide-react";
+import { ProblemDescriptionRenderer } from "@/components/ProblemDescriptionRenderer";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -341,8 +342,8 @@ export default function AdminProblemWorkspacePage() {
                   <span>AST Complexity Index: {(problem?.ast_complexity_score || problem?.difficulty_score || 2.5).toFixed(2)}</span>
                 </span>
               </div>
-              <div className="prose prose-slate text-sm font-sans leading-relaxed text-slate-800 max-w-none">
-                <p>{problem?.description}</p>
+              <div className="py-2 text-sm font-sans text-slate-800">
+                <ProblemDescriptionRenderer content={problem?.description || ""} />
               </div>
             </div>
           </div>

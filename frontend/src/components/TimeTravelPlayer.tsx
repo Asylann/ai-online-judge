@@ -320,7 +320,7 @@ export const TimeTravelPlayer: React.FC<TimeTravelPlayerProps> = ({
           {/* Footer Note */}
           <div className="px-6 py-3 bg-ivory-200 border-t border-slate-300 flex items-center justify-between text-xs font-mono text-slate-600 shrink-0">
             <span>
-              💡 Drag the slider or press <span className="font-bold text-slate-800">Replay</span> to trace how logical structures and EDM metrics evolved across attempts.
+              Drag the slider or press <span className="font-bold text-slate-800">Replay</span> to trace how logical structures and EDM metrics evolved across attempts.
             </span>
             <button
               onClick={onClose}

@@ -19,7 +19,7 @@ export default function LeaderboardPage() {
           {/* Header Banner */}
           <div className="space-y-4 border-b border-slate-900/10 pb-8">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-mono tracking-wider text-amber-800 uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <Trophy className="w-3.5 h-3.5 text-amber-600" />
               <span>Gamified ZPD Progression & Standing</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-serif font-semibold text-slate-900 tracking-tight flex items-center gap-3">
@@ -55,7 +55,7 @@ export default function LeaderboardPage() {
 
             <div className="p-6 rounded-2xl bg-ivory-200/60 border border-slate-900/10 space-y-2">
               <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-800 mb-3">
-                <Sparkles className="w-5 h-5" />
+                <Trophy className="w-5 h-5" />
               </div>
               <h3 className="font-serif font-semibold text-lg text-slate-900">EDM & ZPD Alignment</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
