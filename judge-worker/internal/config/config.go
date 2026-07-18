@@ -32,8 +32,6 @@ type Config struct {
 	// gotreesitter structural deviation analysis and the AI Tutor hint pipeline.
 	ASTServiceURL string // e.g. http://ast-service:8083
 
-	// JaegerEndpoint for OpenTelemetry OTLP HTTP trace exporting
-	JaegerEndpoint string
 }
 
 // Load reads environment variables and returns a validated Config.
@@ -45,7 +43,7 @@ func Load() (*Config, error) {
 		Judge0URL:      os.Getenv("JUDGE0_URL"),
 		ASTServiceURL:  getEnvOrDefault("AST_SERVICE_URL", "http://ast-service:8083"),
 		RedisURL:       getEnvOrDefault("REDIS_URL", "redis:6379"),
-		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
+
 	}
 
 	if cfg.DatabaseURL == "" {

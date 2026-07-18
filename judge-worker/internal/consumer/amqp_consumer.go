@@ -14,11 +14,9 @@ import (
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.opentelemetry.io/otel"
 
 	"github.com/ai-online-judge/judge-worker/internal/service"
 	"github.com/ai-online-judge/pkg/models"
-	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 // AMQPConsumer subscribes to the "judge.tasks" queue and dispatches
@@ -110,13 +108,6 @@ func (c *AMQPConsumer) Start(ctx context.Context) error {
 // Note: requeue=false prevents poison messages (bad payloads) from looping forever.
 // To handle transient failures (network blip), use a retry queue or DLX with TTL.
 func (c *AMQPConsumer) processMessage(ctx context.Context, msg amqp.Delivery) {
-	if msg.Headers != nil {
-		ctx = otel.GetTextMapPropagator().Extract(ctx, telemetry.AMQPHeadersCarrier(msg.Headers))
-	}
-	tracer := otel.Tracer("judge-worker")
-	ctx, span := tracer.Start(ctx, "Consume_JudgeTask")
-	defer span.End()
-
 	// Deserialize the JudgeTask published by the API Gateway
 	var task models.JudgeTask
 	if err := json.Unmarshal(msg.Body, &task); err != nil {

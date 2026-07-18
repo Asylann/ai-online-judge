@@ -29,9 +29,6 @@ type Config struct {
 	// AI Tutor service URL for proxying AI generation requests
 	AITutorURL string
 
-	// JaegerEndpoint for OpenTelemetry OTLP HTTP trace exporting
-	JaegerEndpoint string
-
 	// Admin auto-seeding on startup
 	AdminUsername string
 	AdminPassword string
@@ -48,7 +45,7 @@ func Load() (*Config, error) {
 		RabbitMQURL:    os.Getenv("RABBITMQ_URL"),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AITutorURL:     getEnvOrDefault("AI_TUTOR_URL", "http://ai-tutor:8000"),
-		JaegerEndpoint: getEnvOrDefault("JAEGER_ENDPOINT", "jaeger:4318"),
+
 		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
 		AdminEmail:     os.Getenv("ADMIN_EMAIL"),

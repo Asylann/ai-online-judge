@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 var upgrader = websocket.Upgrader{
@@ -60,7 +59,7 @@ func (h *Hub) Run() {
 			}
 			h.clients[client.UserID][client] = true
 			h.mu.Unlock()
-			telemetry.ActiveWebSocketsGauge.Inc()
+
 			log.Printf("[websocket-service] Client registered: user_id=%s (active tabs: %d)",
 				client.UserID, len(h.clients[client.UserID]))
 
@@ -73,7 +72,7 @@ func (h *Hub) Run() {
 					if len(userClients) == 0 {
 						delete(h.clients, client.UserID)
 					}
-					telemetry.ActiveWebSocketsGauge.Dec()
+
 				}
 			}
 			h.mu.Unlock()

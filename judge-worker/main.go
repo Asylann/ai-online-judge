@@ -18,21 +18,17 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ai-online-judge/judge-worker/internal/config"
 	"github.com/ai-online-judge/judge-worker/internal/consumer"
 	"github.com/ai-online-judge/judge-worker/internal/repository"
 	"github.com/ai-online-judge/judge-worker/internal/service"
 	"github.com/ai-online-judge/pkg/database"
-	"github.com/ai-online-judge/pkg/telemetry"
 )
 
 func main() {
@@ -48,17 +44,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// ── Step 2.5: Initialize OpenTelemetry Tracing ──────────────────────────────
-	tracerProvider, err := telemetry.InitTracer("judge-worker", cfg.JaegerEndpoint)
-	if err != nil {
-		log.Fatalf("[judge-worker] Failed to initialize tracer: %v", err)
-	}
-	defer func() {
-		if err := tracerProvider.Shutdown(context.Background()); err != nil {
-			log.Printf("[judge-worker] Error shutting down tracer provider: %v", err)
-		}
-	}()
-	log.Printf("[judge-worker] OpenTelemetry initialized (endpoint: %s)", cfg.JaegerEndpoint)
 
 	// PostgreSQL — stores verdict and effort_based_metrics after every execution
 	db, err := database.NewPostgresPool(ctx)
@@ -103,26 +88,6 @@ func main() {
 	// Consumer layer — AMQP transport: dequeue, dispatch to service, ACK/NACK
 	amqpConsumer := consumer.NewAMQPConsumer(amqpCh, judgeSvc)
 
-	// ── Step 3.5: Start Lightweight Metrics HTTP Server on Port 8081 ─────────────
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-	metricsServer := &http.Server{
-		Addr:    ":8081",
-		Handler: mux,
-	}
-	go func() {
-		log.Println("[judge-worker] Starting Prometheus metrics server on :8081")
-		if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("[judge-worker] Metrics server error: %v", err)
-		}
-	}()
-	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
-			log.Printf("[judge-worker] Error shutting down metrics server: %v", err)
-		}
-	}()
 
 	// ── Step 4: Start Consumer (blocks until context is cancelled) ───────────────
 	// There is no HTTP server. The goroutine model here is:
