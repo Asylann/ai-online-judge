@@ -20,7 +20,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
@@ -29,7 +29,7 @@ import (
 	"github.com/ai-online-judge/api-gateway/internal/repository"
 	"github.com/ai-online-judge/api-gateway/internal/service"
 	"github.com/ai-online-judge/pkg/database"
-	"github.com/ai-online-judge/pkg/telemetry"
+
 )
 
 func main() {
@@ -42,17 +42,7 @@ func main() {
 		log.Fatalf("[api-gateway] Config error: %v", err)
 	}
 
-	// ── Step 1.5: Initialize OpenTelemetry Tracing ──────────────────────────────
-	tracerProvider, err := telemetry.InitTracer("api-gateway", cfg.JaegerEndpoint)
-	if err != nil {
-		log.Fatalf("[api-gateway] Failed to initialize tracer: %v", err)
-	}
-	defer func() {
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			log.Printf("[api-gateway] Error shutting down tracer provider: %v", err)
-		}
-	}()
-	log.Printf("[api-gateway] OpenTelemetry initialized (endpoint: %s)", cfg.JaegerEndpoint)
+
 
 	// ── Step 2: Establish External Connections ───────────────────────────────────
 
@@ -142,8 +132,7 @@ func main() {
 		})
 	})
 
-	// Prometheus metrics scraping endpoint
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 
 	// Wire all route groups
 	handler.RegisterRoutes(r, authHandler, problemHandler, submissionHandler, adminHandler, leaderboardHandler, moduleHandler, cfg.JWTSecret)
