@@ -620,7 +620,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-12 relative">
+                <div className="space-y-4 sm:space-y-12 relative">
                   {activeRealmObj.problems.map((prob: any, pIdx: number) => {
                     const isPassed = acceptedProblemIDs.has(prob.id);
                     const diffScore = prob.difficulty_score || 2.0;
@@ -654,7 +654,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                         {/* Node Card Container along the Winding Highway */}
                         <motion.div
                           whileHover={{ scale: 1.015, y: -4 }}
-                          className={`w-full md:w-[46%] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 transition-all shadow-md relative overflow-hidden bg-ivory-100 ${
+                          className={`w-full md:w-[46%] rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 transition-all shadow-md relative overflow-hidden bg-ivory-100 ${
                             isPassed
                               ? "border-emerald-600/70 bg-emerald-50/40"
                               : isNextTarget
@@ -707,7 +707,9 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                           </div>
 
                           {/* Dynamic Topic 3D Hologram Simulator */}
-                          {renderTopicHologram(prob.title, prob.description || "", isPassed)}
+                          <div className="hidden sm:block">
+                            {renderTopicHologram(prob.title, prob.description || "", isPassed)}
+                          </div>
 
                           {/* Node Footer Actions */}
                           <div className="pt-4 mt-3 border-t border-slate-900/10 flex items-center justify-between text-xs font-mono">

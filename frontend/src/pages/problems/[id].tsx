@@ -333,7 +333,7 @@ export default function ProblemWorkspacePage() {
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] bg-ivory-100 overflow-hidden">
       {/* Workspace Top Action Bar */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-900/10 bg-ivory-100 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-slate-900/10 bg-ivory-100 flex-shrink-0">
         <div className="flex items-center space-x-4">
           <Link
             href="/"
@@ -348,12 +348,12 @@ export default function ProblemWorkspacePage() {
           </span>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
           <select
             value={language}
             onChange={(e) => handleLanguageChange(e.target.value)}
             disabled={submitting}
-            className="px-3 py-1.5 rounded-lg bg-ivory-200/60 border border-slate-900/15 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-900 transition-colors"
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-ivory-200/60 border border-slate-900/15 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-900 transition-colors"
           >
             <option value="python3">python3 (Python 3.11)</option>
             <option value="cpp">cpp (C++ 20)</option>
@@ -363,7 +363,7 @@ export default function ProblemWorkspacePage() {
           <button
             onClick={handleCodeSubmit}
             disabled={submitting || !problem}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 text-ivory-100 text-xs font-semibold tracking-tight transition-all duration-300 ease-out hover:bg-slate-800 hover:scale-[1.02] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 text-ivory-100 text-xs font-semibold tracking-tight transition-all duration-300 ease-out hover:bg-slate-800 hover:scale-[1.02] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Play className="w-3.5 h-3.5 fill-ivory-100" />
             <span>{submitting ? "Evaluating in Isolate..." : "Submit to Sandbox"}</span>

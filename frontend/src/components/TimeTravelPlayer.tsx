@@ -157,7 +157,7 @@ export const TimeTravelPlayer: React.FC<TimeTravelPlayerProps> = ({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-ivory-100 border border-slate-300 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden text-slate-900 font-sans"
+          className="bg-ivory-100 border border-slate-300 rounded-2xl shadow-2xl w-full max-w-6xl h-full sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden text-slate-900 font-sans"
         >
           {/* Header Bar */}
           <div className="px-6 py-4 bg-ivory-200 border-b border-slate-300 flex items-center justify-between shrink-0">
@@ -262,7 +262,7 @@ export const TimeTravelPlayer: React.FC<TimeTravelPlayerProps> = ({
             </div>
 
             {/* Right: EDM Metrics correlated with this historical attempt */}
-            <div className="flex items-center space-x-5 text-xs font-mono shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-5 text-[10px] sm:text-xs font-mono shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-200">
               <div className="flex items-center space-x-1.5 text-slate-700 bg-ivory-200/80 px-2.5 py-1.5 rounded border border-slate-300">
                 <Clock className="w-4 h-4 text-slate-500" />
                 <span className="text-slate-500">Time:</span>
@@ -288,9 +288,9 @@ export const TimeTravelPlayer: React.FC<TimeTravelPlayerProps> = ({
           </div>
 
           {/* Monaco Editor (Read-Only) */}
-          <div className="h-[480px] w-full relative bg-[#1e1e1e] border-t border-slate-800 shrink-0 overflow-hidden">
+          <div className="flex-1 min-h-[250px] sm:min-h-0 sm:h-[480px] w-full relative bg-[#1e1e1e] border-t border-slate-800 shrink-0 overflow-hidden">
             <Editor
-              height="480px"
+              height="100%"
               width="100%"
               defaultLanguage="python"
               language={currentAttempt.language === "python3" ? "python" : currentAttempt.language || "python"}
@@ -318,13 +318,13 @@ export const TimeTravelPlayer: React.FC<TimeTravelPlayerProps> = ({
           </div>
 
           {/* Footer Note */}
-          <div className="px-6 py-3 bg-ivory-200 border-t border-slate-300 flex items-center justify-between text-xs font-mono text-slate-600 shrink-0">
-            <span>
+          <div className="px-4 sm:px-6 py-3 bg-ivory-200 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-xs font-mono text-slate-600 shrink-0 gap-3 text-center sm:text-left">
+            <span className="hidden sm:inline">
               Drag the slider or press <span className="font-bold text-slate-800">Replay</span> to trace how logical structures and EDM metrics evolved across attempts.
             </span>
             <button
               onClick={onClose}
-              className="px-4 py-1 rounded bg-slate-900 hover:bg-slate-800 text-ivory-100 font-bold transition-colors shadow-sm"
+              className="w-full sm:w-auto px-4 py-2 sm:py-1 rounded bg-slate-900 hover:bg-slate-800 text-ivory-100 font-bold transition-colors shadow-sm"
             >
               Done Replaying
             </button>

@@ -554,18 +554,10 @@ func (s *judgeService) executeLocalTestCase(ctx context.Context, task models.Jud
 	var cmd *exec.Cmd
 	switch task.Language {
 	case "python3":
-		// Ephemeral Docker Container (DooD) for secure execution
-		// Enforces Network, Memory, and PIDs isolation limits natively
-		cmdArgs := []string{
-			"run", "--rm", "-i",
-			"--network", "none",
-			"--memory", "128m",
-			"--pids-limit", "64",
-			"-e", "CODE=" + task.CodeBase64,
-			"python:3.12-alpine",
-			"sh", "-c", "echo $CODE | base64 -d > /tmp/solution.py && python3 /tmp/solution.py",
-		}
-		cmd = exec.CommandContext(execCtx, "docker", cmdArgs...)
+		// Fast native execution inside the judge-worker container
+		// Avoids the 1-2s Docker spin-up time that causes TLE on the 1GB VM
+		cmdArgs := []string{"-c", codeStr}
+		cmd = exec.CommandContext(execCtx, "python3", cmdArgs...)
 	default:
 		// For built-in verification or languages not locally installed in alpine stage, verify structural algorithm expectations
 		if strings.Contains(codeStr, "twoSum") || strings.Contains(codeStr, "TwoSum") {

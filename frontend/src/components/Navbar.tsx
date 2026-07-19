@@ -17,12 +17,15 @@ import {
   Scale,
   ChevronRight,
   Layers,
+  Menu,
+  X,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
@@ -191,39 +194,56 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
           )}
+
+          {/* Hamburger Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-200/60 transition-colors"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Navigation Row (So mobile users also get the stunning unified buttons!) */}
-      <div className="lg:hidden px-4 pb-3 flex items-center space-x-1.5 overflow-x-auto no-scrollbar border-t border-slate-900/10 pt-2.5">
-        {navItems.map((item) => {
-          const active = isActive(item.path);
-          const IconComponent = item.icon;
-          return (
+      {/* Mobile Dropdown Menu */}
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="lg:hidden px-4 pb-4 pt-2 border-t border-slate-900/10 bg-ivory-100/95 flex flex-col space-y-2"
+        >
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const IconComponent = item.icon;
+            return (
+              <Link
+                key={item.label}
+                href={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-xl font-mono text-sm font-bold transition-all flex items-center space-x-3 border ${
+                  active
+                    ? "border-slate-900 bg-slate-900 text-ivory-100 shadow-sm"
+                    : "border-slate-900/15 bg-ivory-200/80 text-slate-700 hover:border-slate-900 hover:text-slate-950 hover:bg-white"
+                }`}
+              >
+                <IconComponent className={`w-4 h-4 ${active ? "text-amber-400 font-bold" : "text-slate-500"}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          {user?.role === "admin" && (
             <Link
-              key={item.label}
-              href={item.path}
-              className={`shrink-0 px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all flex items-center space-x-1.5 border ${
-                active
-                  ? "border-slate-900 bg-slate-900 text-ivory-100 shadow-xs"
-                  : "border-slate-900/15 bg-ivory-200/80 text-slate-700 hover:border-slate-900 hover:text-slate-950 hover:bg-white"
-              }`}
+              href="/admin/problems"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl font-mono text-sm font-black bg-amber-500 text-slate-950 border border-slate-900 flex items-center space-x-3 mt-2"
             >
-              <IconComponent className={`w-3.5 h-3.5 ${active ? "text-amber-400 font-bold" : "text-slate-500"}`} />
-              <span>{item.label}</span>
+              <ShieldAlert className="w-4 h-4" />
+              <span>Admin Studio</span>
             </Link>
-          );
-        })}
-        {user?.role === "admin" && (
-          <Link
-            href="/admin/problems"
-            className="shrink-0 px-3 py-1.5 rounded-lg font-mono text-xs font-black bg-amber-500 text-slate-950 border border-slate-900 flex items-center space-x-1"
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Admin Studio</span>
-          </Link>
-        )}
-      </div>
+          )}
+        </motion.div>
+      )}
     </header>
   </div>
   );
