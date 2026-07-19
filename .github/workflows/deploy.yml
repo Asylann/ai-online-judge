@@ -23,7 +23,7 @@ jobs:
         include:
           - service: nginx
             context: ./nginx
-            dockerfile: Dockerfile
+            dockerfile: nginx/Dockerfile
           - service: api-gateway
             context: .
             dockerfile: api-gateway/Dockerfile
@@ -35,13 +35,13 @@ jobs:
             dockerfile: ast-service/Dockerfile
           - service: ai-tutor
             context: ./ai-tutor
-            dockerfile: Dockerfile
+            dockerfile: ai-tutor/Dockerfile
           - service: websocket-service
             context: .
             dockerfile: websocket-service/Dockerfile
           - service: frontend
             context: ./frontend
-            dockerfile: Dockerfile
+            dockerfile: frontend/Dockerfile
 
     steps:
       - name: Checkout repository
