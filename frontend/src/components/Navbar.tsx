@@ -80,15 +80,15 @@ export const Navbar: React.FC = () => {
 
         <div className="w-full h-full flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Logo & Name */}
-          <Link href="/" className="flex items-center space-x-2.5 group select-none shrink-0">
+          <Link href="/" className="flex items-center space-x-2.5 group select-none min-w-0 shrink pr-2">
             <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-md transition-transform duration-300 ease-out group-hover:scale-105 overflow-hidden">
               <img src="/logo.svg" alt="AI Online Judge Logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain z-10 drop-shadow" />
               <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
             </div>
 
             <div className="flex flex-col">
-              <div className="flex items-center space-x-2">
-                <span className="font-serif font-black text-base sm:text-xl text-slate-900 tracking-tight group-hover:text-amber-800 transition-colors">
+              <div className="flex items-center space-x-2 min-w-0">
+                <span className="font-serif font-black text-[14px] min-[360px]:text-base sm:text-xl text-slate-900 tracking-tight group-hover:text-amber-800 transition-colors truncate">
                   AI Online Judge
                 </span>
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[9px] font-mono font-bold uppercase tracking-widest text-amber-300 shadow-2xs">
@@ -179,18 +179,18 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center space-x-1.5 sm:space-x-2">
               <Link
                 href="/login"
-                className="px-3 py-1.5 rounded-xl border border-slate-900/20 bg-ivory-200/80 hover:bg-white hover:border-slate-900 text-slate-800 hover:text-slate-950 text-xs font-mono font-bold transition-all duration-200 shadow-2xs flex items-center space-x-1 group"
+                className="px-2 min-[360px]:px-3 py-1.5 rounded-xl border border-slate-900/20 bg-ivory-200/80 hover:bg-white hover:border-slate-900 text-slate-800 hover:text-slate-950 text-xs font-mono font-bold transition-all duration-200 shadow-2xs flex items-center space-x-1 group"
               >
-                <LogIn className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
-                <span>Sign In</span>
+                <LogIn className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                <span className="hidden min-[360px]:inline">Sign In</span>
               </Link>
 
               <Link
                 href="/register"
-                className="px-3 sm:px-3.5 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-900 text-ivory-100 hover:bg-slate-800 hover:text-amber-300 text-xs font-mono font-black tracking-wider uppercase transition-all duration-200 shadow-sm flex items-center space-x-1 group shrink-0"
+                className="px-2 min-[360px]:px-3.5 py-1.5 rounded-xl border-2 border-slate-900 bg-slate-900 text-ivory-100 hover:bg-slate-800 hover:text-amber-300 text-xs font-mono font-black tracking-wider uppercase transition-all duration-200 shadow-sm flex items-center space-x-1 group shrink-0"
               >
-                <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
-                <span>Register</span>
+                <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                <span className="hidden min-[360px]:inline">Register</span>
               </Link>
             </div>
           )}
@@ -198,7 +198,7 @@ export const Navbar: React.FC = () => {
           {/* Hamburger Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="lg:hidden p-1.5 min-[360px]:p-2 rounded-xl text-slate-700 hover:bg-slate-200/60 transition-colors shrink-0 ml-1"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

@@ -3,12 +3,15 @@ import Link from "next/link";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
-import { EffortDashboard, SubmissionMetric } from "@/components/EffortDashboard";
-import { Leaderboard } from "@/components/Leaderboard";
-import { ChallengeOfTheDay } from "@/components/ChallengeOfTheDay";
-import { HeroVisual } from "@/components/HeroVisual";
-import { ZPDQuestMap } from "@/components/ZPDQuestMap";
-import { ArrowUpRight, BookOpen, Sparkles, Activity, Code, Award, Search, Filter } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { SubmissionMetric } from "@/components/EffortDashboard";
+
+const EffortDashboard = dynamic(() => import("@/components/EffortDashboard").then(mod => mod.EffortDashboard), { ssr: false });
+const Leaderboard = dynamic(() => import("@/components/Leaderboard").then(mod => mod.Leaderboard), { ssr: false });
+const ChallengeOfTheDay = dynamic(() => import("@/components/ChallengeOfTheDay").then(mod => mod.ChallengeOfTheDay), { ssr: false });
+const HeroVisual = dynamic(() => import("@/components/HeroVisual").then(mod => mod.HeroVisual), { ssr: false });
+const ZPDQuestMap = dynamic(() => import("@/components/ZPDQuestMap").then(mod => mod.ZPDQuestMap), { ssr: false });
+import { ArrowUpRight, Activity, Code, Award, Search, Filter } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
