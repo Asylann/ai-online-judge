@@ -101,7 +101,7 @@ Expected Output:
 Generate exactly 9 additional test cases (Difficulty Ranks 2 through 10) in the required JSON format."""
 
                 response = await openai_client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": PROBLEM_SETTER_SYSTEM_PROMPT},
                         {"role": "user", "content": user_prompt}

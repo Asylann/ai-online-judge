@@ -164,7 +164,7 @@ export default function ProblemWorkspacePage() {
                   return prev; // Real AI hint already set — don't overwrite
                 }
                 return {
-                  hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o...`,
+                  hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o-mini...`,
                   target_line: null,
                   cognitive_effort_index: 2.5,
                 };
@@ -372,9 +372,9 @@ export default function ProblemWorkspacePage() {
       </div>
 
       {/* 3-Pane Workspace Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
         {/* Left Pane: Problem Description (4 cols) */}
-        <div className="lg:col-span-4 border-r border-slate-900/10 flex flex-col h-full bg-ivory-100 overflow-y-auto p-6 space-y-6">
+        <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-900/10 flex flex-col lg:h-full bg-ivory-100 lg:overflow-y-auto p-4 sm:p-6 space-y-6 shrink-0">
           {problem ? (
             <>
               <div>
@@ -441,7 +441,7 @@ export default function ProblemWorkspacePage() {
 
         {/* Center Pane: Monaco Code Editor (always 5 cols — right pane always rendered) */}
         <div
-          className="lg:col-span-5 h-full p-4 flex flex-col bg-slate-950 transition-all duration-300"
+          className="lg:col-span-5 h-[60vh] lg:h-full p-2 sm:p-4 flex flex-col bg-slate-950 transition-all duration-300 shrink-0"
         >
           <CodeEditor
             code={code}
@@ -453,7 +453,7 @@ export default function ProblemWorkspacePage() {
 
         {/* Right Pane: Execution Output / Socratic Virtual TA Panel */}
         {submitting ? (
-          <div className="lg:col-span-3 p-6 flex flex-col items-center justify-center text-center bg-ivory-100 border-t lg:border-t-0 lg:border-l border-slate-900/10">
+          <div className="lg:col-span-3 p-6 flex flex-col items-center justify-center text-center bg-ivory-100 border-t lg:border-t-0 lg:border-l border-slate-900/10 shrink-0 min-h-[300px]">
             <Cpu className="w-8 h-8 text-slate-400 animate-pulse mb-3" />
             <h3 className="text-sm font-serif font-medium text-slate-900 mb-1">
               Sandbox Evaluation
@@ -463,7 +463,7 @@ export default function ProblemWorkspacePage() {
             </p>
           </div>
         ) : (
-          <div className="lg:col-span-3 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-900/10 p-6 bg-ivory-100 overflow-y-auto">
+          <div className="lg:col-span-3 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-900/10 p-6 bg-ivory-100 lg:overflow-y-auto shrink-0">
             <div>
               <div className="flex items-center space-x-2 text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-4">
                 <span>Evaluation & Guidance</span>

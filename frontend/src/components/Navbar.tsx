@@ -66,8 +66,8 @@ export const Navbar: React.FC = () => {
       <header
         className={`pointer-events-auto transition-all duration-500 ease-out relative overflow-hidden ${
           scrolled
-            ? "max-w-[1340px] mx-auto rounded-2xl bg-ivory-100/95 backdrop-blur-xl border-2 border-slate-900/25 shadow-[0_12px_35px_rgba(0,0,0,0.18)] h-14 px-4 sm:px-6"
-            : "w-full bg-ivory-100/85 backdrop-blur-md border-b-2 border-slate-900/15 shadow-sm h-20 px-4 sm:px-8"
+            ? "max-w-[1340px] mx-auto rounded-2xl bg-ivory-100/95 backdrop-blur-xl border-2 border-slate-900/25 shadow-[0_12px_35px_rgba(0,0,0,0.18)] py-3 px-4 sm:px-6"
+            : "w-full bg-ivory-100/85 backdrop-blur-md border-b-2 border-slate-900/15 shadow-sm py-5 px-4 sm:px-8"
         }`}
       >
         {/* Top Accent Bar (only visible when full width / not scrolled) */}

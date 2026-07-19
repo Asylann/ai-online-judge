@@ -48,7 +48,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md bg-ivory-100 p-8 sm:p-10 rounded-2xl border border-slate-900/10 shadow-sm"
+        className="w-full max-w-md bg-ivory-100 p-6 sm:p-10 rounded-2xl border border-slate-900/10 shadow-sm mx-4"
       >
         <div className="mb-8">
           <span className="text-[11px] font-mono uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded">

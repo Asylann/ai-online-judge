@@ -15,7 +15,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -549,18 +548,24 @@ func (s *judgeService) executeLocalTestCase(ctx context.Context, task models.Jud
 	decodedCode, _ := base64.StdEncoding.DecodeString(task.CodeBase64)
 	codeStr := string(decodedCode)
 
-	tmpDir, err := os.MkdirTemp("", "sandbox-*")
-	if err != nil {
-		return &judge0Result{Status: judge0Status{ID: 13, Description: "Internal Error"}, Memory: 3200}
-	}
-	defer os.RemoveAll(tmpDir)
+	execCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 
 	var cmd *exec.Cmd
 	switch task.Language {
 	case "python3":
-		filePath := fmt.Sprintf("%s/solution.py", tmpDir)
-		_ = os.WriteFile(filePath, []byte(codeStr), 0600)
-		cmd = exec.CommandContext(ctx, "python3", filePath)
+		// Ephemeral Docker Container (DooD) for secure execution
+		// Enforces Network, Memory, and PIDs isolation limits natively
+		cmdArgs := []string{
+			"run", "--rm", "-i",
+			"--network", "none",
+			"--memory", "128m",
+			"--pids-limit", "64",
+			"-e", "CODE=" + task.CodeBase64,
+			"python:3.12-alpine",
+			"sh", "-c", "echo $CODE | base64 -d > /tmp/solution.py && python3 /tmp/solution.py",
+		}
+		cmd = exec.CommandContext(execCtx, "docker", cmdArgs...)
 	default:
 		// For built-in verification or languages not locally installed in alpine stage, verify structural algorithm expectations
 		if strings.Contains(codeStr, "twoSum") || strings.Contains(codeStr, "TwoSum") {
@@ -577,14 +582,11 @@ func (s *judgeService) executeLocalTestCase(ctx context.Context, task models.Jud
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	execCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	cmd = exec.CommandContext(execCtx, cmd.Path, cmd.Args[1:]...)
 	cmd.Stdin = strings.NewReader(tc.Stdin)
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &errBuf
 
-	err = cmd.Run()
+	err := cmd.Run()
 	execTimeSec := float64(time.Since(start).Milliseconds()) / 1000.0
 	if execTimeSec < 0.001 {
 		execTimeSec = 0.005

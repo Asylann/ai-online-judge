@@ -249,7 +249,7 @@ export default function DashboardPage() {
     <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 py-12 sm:py-16 space-y-20">
       {/* Hero Section with Staggered Word Reveal & Visual Animation */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -264,7 +264,7 @@ export default function DashboardPage() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap gap-x-3 gap-y-1"
+            className="text-4xl sm:text-5xl lg:text-7xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap justify-center lg:justify-start gap-x-3 gap-y-1"
           >
             {HERO_TEXT.split(" ").map((word, index) => (
               <motion.span key={index} variants={wordVariants} className="inline-block">
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl"
+            className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl mx-auto lg:mx-0"
           >
             {HERO_SUBTEXT}
           </motion.p>
