@@ -1,0 +1,103 @@
+name: Deploy AI Online Judge to Oracle VM
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  # Converts repository name to lowercase (required by docker)
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - service: nginx
+            context: ./nginx
+            dockerfile: Dockerfile
+          - service: api-gateway
+            context: .
+            dockerfile: api-gateway/Dockerfile
+          - service: judge-worker
+            context: .
+            dockerfile: judge-worker/Dockerfile
+          - service: ast-service
+            context: .
+            dockerfile: ast-service/Dockerfile
+          - service: ai-tutor
+            context: ./ai-tutor
+            dockerfile: Dockerfile
+          - service: websocket-service
+            context: .
+            dockerfile: websocket-service/Dockerfile
+          - service: frontend
+            context: ./frontend
+            dockerfile: Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Convert image name to lowercase
+        run: |
+          echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/apps/aioj-prod/ai-online-judge || { echo "Project directory not found!"; exit 1; }
+            
+            echo "Pulling latest changes from Git..."
+            git pull origin master || git pull origin main
+            
+            echo "Logging into GHCR..."
+            # You must create a Personal Access Token (classic) with 'read:packages' 
+            # and add it as a secret named CR_PAT
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "Pulling latest images from GHCR..."
+            docker compose -f docker-compose.prod.yml pull
+            
+            echo "Stopping old containers to free up RAM..."
+            docker compose -f docker-compose.prod.yml down
+            
+            echo "Starting containers..."
+            docker compose -f docker-compose.prod.yml up -d
+            
+            echo "Pruning dangling and old images..."
+            docker system prune -af
+            
+            echo "Deployment successful!"

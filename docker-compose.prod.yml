@@ -8,13 +8,10 @@ x-logging: &default-logging
 
 services:
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-nginx:latest
     container_name: ai_judge_nginx
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       - frontend
       - api-gateway
@@ -35,12 +32,12 @@ services:
       POSTGRES_DB: aionlinejudge
       POSTGRES_USER: judge
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=30"]
+    command: [ "postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=30" ]
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - ./deployments/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U judge -d aionlinejudge"]
+      test: [ "CMD-SHELL", "pg_isready -U judge -d aionlinejudge" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -60,7 +57,7 @@ services:
     volumes:
       - redis_prod_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -82,7 +79,7 @@ services:
     volumes:
       - rabbitmq_prod_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -96,9 +93,7 @@ services:
           memory: 120M
 
   api-gateway:
-    build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-api-gateway:latest
     container_name: ai_judge_api_gateway
     environment:
       PORT: "8080"
@@ -125,9 +120,7 @@ services:
           memory: 30M
 
   judge-worker:
-    build:
-      context: .
-      dockerfile: judge-worker/Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-judge-worker:latest
     container_name: ai_judge_worker
     environment:
       DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
@@ -154,9 +147,7 @@ services:
           memory: 50M
 
   ast-service:
-    build:
-      context: .
-      dockerfile: ast-service/Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-ast-service:latest
     container_name: ai_judge_ast_service
     environment:
       PORT: "8083"
@@ -175,9 +166,7 @@ services:
           memory: 30M
 
   ai-tutor:
-    build:
-      context: ./ai-tutor
-      dockerfile: Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-ai-tutor:latest
     container_name: ai_judge_ai_tutor
     environment:
       PORT: "8000"
@@ -200,9 +189,7 @@ services:
           memory: 150M
 
   websocket-service:
-    build:
-      context: .
-      dockerfile: websocket-service/Dockerfile
+    image: ghcr.io/asylann/ai-online-judge-websocket-service:latest
     container_name: ai_judge_websocket_service
     environment:
       PORT: "8082"
@@ -221,12 +208,7 @@ services:
           memory: 20M
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: /api/v1
-        NEXT_PUBLIC_WS_URL: /ws
+    image: ghcr.io/asylann/ai-online-judge-frontend:latest
     container_name: ai_judge_frontend
     environment:
       PORT: "3000"
