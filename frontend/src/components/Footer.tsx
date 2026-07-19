@@ -141,7 +141,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
                 <span className="text-slate-400">Virtual TA</span>
-                <span className="text-amber-400 font-bold">FastAPI + GPT-4o</span>
+                <span className="text-amber-400 font-bold">FastAPI + GPT-4o-mini</span>
               </div>
               <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
                 <span className="text-slate-400">AST Analysis</span>

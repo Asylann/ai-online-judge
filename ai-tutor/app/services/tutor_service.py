@@ -222,7 +222,7 @@ Please provide a Socratic pedagogical hint directing the student towards a minim
 
         try:
             response = await openai_client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": VIRTUAL_TA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt}

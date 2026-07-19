@@ -414,7 +414,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
   const activeRealmObj = selectedRealm !== null ? processedRealms[selectedRealm] : processedRealms[0] || null;
 
   return (
-    <section className="bg-gradient-to-br from-ivory-100 via-ivory-200/60 to-amber-50/40 border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden space-y-8 [perspective:1400px]">
+    <section className="bg-gradient-to-br from-ivory-100 via-ivory-200/60 to-amber-50/40 border-2 border-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl relative overflow-hidden space-y-6 sm:space-y-8 [perspective:1400px]">
       {/* Decorative Background Technical Blueprint Grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
 
@@ -554,7 +554,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.35 }}
-            className="bg-ivory-100 border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 overflow-hidden transform-gpu"
+            className="bg-ivory-100 border-2 border-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl relative z-10 overflow-hidden transform-gpu"
           >
             {/* Stage Title Box */}
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 border-b border-slate-900/10 pb-6 mb-8">
@@ -654,7 +654,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
                         {/* Node Card Container along the Winding Highway */}
                         <motion.div
                           whileHover={{ scale: 1.015, y: -4 }}
-                          className={`w-full md:w-[46%] rounded-3xl p-6 border-2 transition-all shadow-md relative overflow-hidden bg-ivory-100 ${
+                          className={`w-full md:w-[46%] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 transition-all shadow-md relative overflow-hidden bg-ivory-100 ${
                             isPassed
                               ? "border-emerald-600/70 bg-emerald-50/40"
                               : isNextTarget

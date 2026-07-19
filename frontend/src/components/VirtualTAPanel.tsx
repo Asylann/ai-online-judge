@@ -93,7 +93,7 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
                     Socratic AI Engine Active
                   </span>
                   <span className="text-[11px] font-mono text-amber-700 animate-pulse font-semibold">
-                    gotreesitter + GPT-4o RAG
+                    gotreesitter + GPT-4o-mini RAG
                   </span>
                 </div>
                 <h4 className="text-sm font-serif font-bold text-slate-900 leading-snug">

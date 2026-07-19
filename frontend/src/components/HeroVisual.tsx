@@ -16,7 +16,7 @@ export const HeroVisual: React.FC = () => {
   return (
     <div className="relative w-full py-4 lg:py-0 select-none">
       {/* Outer Glow Ring Background */}
-      <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/15 via-slate-900/10 to-amber-600/20 rounded-3xl blur-2xl pointer-events-none animate-pulse" />
+      <div className="absolute inset-0 md:-inset-4 bg-gradient-to-tr from-amber-500/15 via-slate-900/10 to-amber-600/20 rounded-3xl blur-2xl pointer-events-none animate-pulse" />
 
       {/* Main Container Card */}
       <motion.div
@@ -172,7 +172,7 @@ export const HeroVisual: React.FC = () => {
             <span className="text-slate-400 block text-[9px] uppercase tracking-wider">
               AI Mentor
             </span>
-            <span className="text-emerald-400 font-bold text-xs">GPT-4o RAG</span>
+            <span className="text-emerald-400 font-bold text-xs">GPT-4o-mini RAG</span>
           </div>
           <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
             <span className="text-slate-400 block text-[9px] uppercase tracking-wider">

@@ -447,7 +447,7 @@ export default function AdminProblemNewPage() {
               className="flex items-center justify-center space-x-2.5 bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 text-ivory-100 hover:from-amber-800 hover:to-slate-900 px-5 py-2.5 rounded-lg font-serif font-bold text-xs tracking-wide transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] disabled:opacity-60 disabled:pointer-events-none shrink-0"
             >
               <Sparkles className={`w-4 h-4 text-amber-300 ${generating ? "animate-spin" : "animate-pulse"}`} />
-              <span>{generating ? "Generating 10 Ranked Cases via GPT-4o..." : "Generate Test Cases with AI"}</span>
+              <span>{generating ? "Generating 10 Ranked Cases via GPT-4o-mini..." : "Generate Test Cases with AI"}</span>
             </button>
           </div>
 
