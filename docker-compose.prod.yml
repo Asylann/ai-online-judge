@@ -20,10 +20,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 20M
 
   postgres:
     image: postgres:15-alpine
@@ -45,10 +41,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 100M
 
   redis:
     image: redis:7-alpine
@@ -65,10 +57,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 30M
 
   rabbitmq:
     image: rabbitmq:3-alpine
@@ -87,10 +75,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 120M
 
   api-gateway:
     image: ghcr.io/asylann/ai-online-judge-api-gateway:latest
@@ -114,10 +98,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 30M
 
   judge-worker:
     image: ghcr.io/asylann/ai-online-judge-judge-worker:latest
@@ -141,10 +121,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 50M
 
   ast-service:
     image: ghcr.io/asylann/ai-online-judge-ast-service:latest
@@ -160,10 +136,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 30M
 
   ai-tutor:
     image: ghcr.io/asylann/ai-online-judge-ai-tutor:latest
@@ -183,10 +155,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 150M
 
   websocket-service:
     image: ghcr.io/asylann/ai-online-judge-websocket-service:latest
@@ -202,10 +170,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 20M
 
   frontend:
     image: ghcr.io/asylann/ai-online-judge-frontend:latest
@@ -221,10 +185,6 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          memory: 200M
 
 networks:
   ai-judge-network:
