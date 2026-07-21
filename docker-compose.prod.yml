@@ -68,9 +68,10 @@ services:
       - rabbitmq_prod_data:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 10s
-      timeout: 5s
+      interval: 20s # Проверять реже
+      timeout: 15s # Дать больше времени скрипту диагностики
       retries: 10
+      start_period: 60s
     networks:
       - ai-judge-network
     restart: unless-stopped
