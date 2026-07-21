@@ -75,6 +75,10 @@ services:
       - ai-judge-network
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
 
   api-gateway:
     image: ghcr.io/asylann/ai-online-judge-api-gateway:latest
