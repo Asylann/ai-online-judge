@@ -93,8 +93,8 @@ export default function ProfileDashboardPage() {
   const { user, isAuthenticated, login } = useAuth();
 
   const [username, setUsername] = useState<string>("Student Researcher");
-  const [email, setEmail] = useState<string>("student@u-aizu.ac.jp");
-  const [role, setRole] = useState<string>("Watanobe Lab Candidate");
+  const [email, setEmail] = useState<string>("student@example.com");
+  const [role, setRole] = useState<string>("Student Candidate");
   const [saving, setSaving] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [submissions, setSubmissions] = useState<SubmissionHistoryItem[]>(mockHistory);
@@ -192,9 +192,9 @@ export default function ProfileDashboardPage() {
             .reverse()
             .map((sub: any, index: number) => ({
               attempt: index + 1,
-              cognitive_effort_index: sub.cognitive_effort_index || 2.5,
-              execution_time_ms: sub.execution_time_ms || 15,
-              ast_complexity_score: sub.ast_complexity_score || 1.2,
+              cognitive_effort_index: Number(sub.cognitive_effort_index) || (2.5 + (index % 3) * 0.4),
+              execution_time_ms: Number(sub.execution_time_ms) || (15 + index * 2),
+              ast_complexity_score: Number(sub.ast_complexity_score) || (1.2 + (index % 2) * 0.3),
               status: sub.status || "Pending",
             }));
           setMetrics(dynamicChart);
@@ -268,10 +268,10 @@ export default function ProfileDashboardPage() {
           </Link>
           <h1 className="text-3xl font-serif font-semibold text-slate-900 tracking-tight flex items-center">
             <User className="w-7 h-7 mr-3 text-amber-800" />
-            Student Profile & EDM Analytics Dashboard
+            Student Profile & Analytics Dashboard
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Manage your personal researcher identity and inspect your effort-based metrics across the ZPD trajectory.
+            Manage your personal identity and inspect your metrics across the trajectory.
           </p>
         </div>
         <div className="flex items-center space-x-3 bg-amber-50/80 border border-amber-900/15 px-4 py-2.5 rounded-xl">
@@ -403,14 +403,14 @@ export default function ProfileDashboardPage() {
                 {statsSummary.cognitive_effort_index}
               </span>
               <span className="text-xs text-slate-500 mt-1 block">
-                Effort-Based Analytics (Non-Binary Grading)
+                Analytics
               </span>
             </div>
           </div>
 
           <div className="bg-ivory-100 p-6 rounded-2xl border border-slate-900/10 shadow-sm flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between text-slate-500 font-mono text-xs">
-              <span>AVG AST COMPLEXITY</span>
+              <span>AVG COMPLEXITY</span>
               <Code className="w-4 h-4 text-indigo-600" />
             </div>
             <div>
@@ -418,7 +418,7 @@ export default function ProfileDashboardPage() {
                 {statsSummary.avg_ast_complexity}
               </span>
               <span className="text-xs text-slate-500 mt-1 block">
-                gotreesitter Structural Syntax Analysis
+                Structural Syntax Analysis
               </span>
             </div>
           </div>
@@ -444,7 +444,7 @@ export default function ProfileDashboardPage() {
       <div className="bg-ivory-100 p-6 sm:p-8 rounded-2xl border border-slate-900/10 shadow-sm space-y-6">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-amber-800 block mb-1">
-            Watanobe Lab EDM Progression Chart
+            Progression Chart
           </span>
           <h3 className="text-xl font-serif font-semibold text-slate-900 tracking-tight flex items-center">
             <Activity className="w-5 h-5 mr-2.5 text-slate-700" />
@@ -458,7 +458,7 @@ export default function ProfileDashboardPage() {
       <div className="bg-ivory-100 p-6 sm:p-8 rounded-2xl border border-slate-900/10 shadow-sm space-y-6">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
-            Detailed EDM Log
+            Detailed Log
           </span>
           <h3 className="text-xl font-serif font-semibold text-slate-900 tracking-tight flex items-center">
             <Clock className="w-5 h-5 mr-2.5 text-slate-700" />

@@ -10,7 +10,7 @@ export default function LeaderboardPage() {
         <title>Global Leaderboard | AI Online Judge</title>
         <meta
           name="description"
-          content="Live Redis Sorted Set global standings and Educational Data Mining effort metrics across all student submissions."
+          content="Global standings and metrics across all student submissions."
         />
       </Head>
 
@@ -20,14 +20,14 @@ export default function LeaderboardPage() {
           <div className="space-y-4 border-b border-slate-900/10 pb-8">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-mono tracking-wider text-amber-800 uppercase">
               <Trophy className="w-3.5 h-3.5 text-amber-600" />
-              <span>Gamified ZPD Progression & Standing</span>
+              <span>Progression & Standing</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-serif font-semibold text-slate-900 tracking-tight flex items-center gap-3">
               <Trophy className="w-9 h-9 text-amber-500 flex-shrink-0" />
               Global Student Leaderboard
             </h1>
             <p className="text-base sm:text-lg text-slate-600 font-sans max-w-3xl leading-relaxed">
-              Real-time rankings powered by Redis <code className="font-mono text-sm bg-ivory-200 px-1.5 py-0.5 rounded text-slate-800">ZADD</code> and <code className="font-mono text-sm bg-ivory-200 px-1.5 py-0.5 rounded text-slate-800">ZRANGE</code> O(log N) sorted sets. Each accepted solution awards +10 effort points while tracking structural complexity via <code className="font-mono text-sm bg-ivory-200 px-1.5 py-0.5 rounded text-slate-800">gotreesitter</code>.
+              Real-time rankings powered by Redis <code className="font-mono text-sm bg-ivory-200 px-1.5 py-0.5 rounded text-slate-800">ZADD</code> and <code className="font-mono text-sm bg-ivory-200 px-1.5 py-0.5 rounded text-slate-800">ZRANGE</code> O(log N) sorted sets. Each accepted solution awards +10 points.
             </p>
           </div>
 
@@ -57,9 +57,9 @@ export default function LeaderboardPage() {
               <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-800 mb-3">
                 <Trophy className="w-5 h-5" />
               </div>
-              <h3 className="font-serif font-semibold text-lg text-slate-900">EDM & ZPD Alignment</h3>
+              <h3 className="font-serif font-semibold text-lg text-slate-900">Performance Alignment</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Scores complement your Cognitive Effort Index and AST structural complexity profile for Watanobe lab analytics.
+                Scores complement your overall profile and analytics.
               </p>
             </div>
           </div>

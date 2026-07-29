@@ -306,7 +306,7 @@ const renderTopicHologram = (title: string = "", description: string = "", isPas
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           <span>Seccomp-BPF & cgroups v2 active</span>
         </span>
-        <span className="text-slate-500 font-mono">gotreesitter: O(1)</span>
+        <span className="text-slate-500 font-mono">Complexity: O(1)</span>
       </div>
     </div>
   );

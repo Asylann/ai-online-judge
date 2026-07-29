@@ -93,14 +93,14 @@ export const VirtualTAPanel: React.FC<VirtualTAPanelProps> = ({
                     Socratic AI Engine Active
                   </span>
                   <span className="text-[11px] font-mono text-amber-700 animate-pulse font-semibold">
-                    gotreesitter + GPT-4o-mini RAG
+                    Virtual TA Analytics
                   </span>
                 </div>
                 <h4 className="text-sm font-serif font-bold text-slate-900 leading-snug">
                   {hint?.hint_text || "Virtual TA is analyzing structural deviations & synthesizing guiding Socratic hint..."}
                 </h4>
                 <p className="text-xs text-slate-600 font-sans leading-relaxed">
-                  Comparing your AST snapshot (`gotreesitter` structural pattern) against known logical error degrees. Formulating minimal-edit pedagogical guidance to keep you inside your Zone of Proximal Development.
+                  Comparing your snapshot against known logical error degrees. Formulating guidance to keep you inside your trajectory.
                 </p>
                 <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <span className="px-2.5 py-1 bg-white/80 rounded-md border border-slate-900/10 text-[11px] font-mono text-slate-700 shadow-sm flex items-center space-x-1">

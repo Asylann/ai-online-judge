@@ -99,9 +99,9 @@ export const Navbar: React.FC = () => {
               <span className={`text-[10px] font-mono text-slate-500 font-semibold tracking-wide flex items-center space-x-1.5 transition-all duration-300 ${
                 scrolled ? "hidden xl:flex" : "hidden md:flex"
               }`}>
-                <span>Watanobe Lab EDM</span>
+                <span>Platform Analytics</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-emerald-700 font-bold">gotreesitter AST</span>
+                <span className="text-emerald-700 font-bold">Live</span>
               </span>
             </div>
           </Link>

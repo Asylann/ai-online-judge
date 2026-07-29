@@ -24,8 +24,8 @@ interface Problem {
   test_cases?: any[];
 }
 
-const HERO_TEXT = "AI-Powered Online Judge with Socratic Virtual TA & Effort-Based EDM.";
-const HERO_SUBTEXT = "Designed for Prof. Yutaka Watanobe's lab at the University of Aizu. Experience secure sandboxed execution, gotreesitter AST structural complexity analysis, and adaptive Zone of Proximal Development (ZPD) recommendations.";
+const HERO_TEXT = "AI-Powered Online Judge with Socratic Virtual TA.";
+const HERO_SUBTEXT = "Forge your path to mastery through battle-tested sandboxed execution and a hyper-intelligent AI that dynamically adapts to your every move.";
 
 // Staggered word animation helper for the Anthropic hero reveal
 const containerVariants = {
@@ -404,11 +404,11 @@ export default function DashboardPage() {
             </span>
             <h2 className="text-2xl font-serif font-semibold text-slate-900 tracking-tight flex items-center">
               <Activity className="w-5 h-5 mr-2.5 text-slate-700" />
-              Student Cognitive Effort & AST Complexity Analytics
+              Student Analytics
             </h2>
           </div>
           <span className="text-xs font-sans text-slate-500 max-w-xs">
-            Tracking non-binary metrics across your ZPD trajectory per Prof. Watanobe&apos;s effort-based evaluation model.
+            Tracking metrics across your trajectory.
           </span>
         </div>
 

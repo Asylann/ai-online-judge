@@ -73,7 +73,7 @@ if __name__ == "__main__":
 `;
 
 const DEFAULT_CPP_CODE = `// Write your solution below.
-// Evaluated by gotreesitter for AST complexity and structural deviation.
+// Evaluated for complexity.
 
 #include <iostream>
 #include <vector>
@@ -132,7 +132,7 @@ export default function ProblemWorkspacePage() {
       setRecommendation({
         id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         title: "Balanced BST Verification — Structural Validation",
-        description: "Given the root of a binary tree, determine if it is a valid binary search tree (BST). Tracked via EDM effort metrics.",
+        description: "Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
         difficulty_score: problem ? problem.difficulty_score + 0.5 : 2.0,
       });
       setShowRecommendation(true);
@@ -177,7 +177,7 @@ export default function ProblemWorkspacePage() {
                   return prev; // Real AI hint already set — don't overwrite
                 }
                 return {
-                  hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing structural deviation via gotreesitter & GPT-4o-mini...`,
+                  hint_text: `Virtual TA (Socratic Hint): Your code returned status ${newStatus}. Analyzing...`,
                   target_line: null,
                   cognitive_effort_index: 2.5,
                 };
@@ -229,7 +229,7 @@ export default function ProblemWorkspacePage() {
         setProblem({
           id: id,
           title: "Two Sum — Optimal Structural Indexing",
-          description: "Given an array of integers and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.\n\nYour solution is tracked via Educational Data Mining (EDM) effort metrics.",
+          description: "Given an array of integers and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.",
           difficulty_score: 1.5,
         });
       }
@@ -436,11 +436,11 @@ export default function ProblemWorkspacePage() {
               <div className="pt-6 border-t border-slate-900/10 space-y-3">
                 <h4 className="text-xs font-mono uppercase tracking-wider text-slate-500 flex items-center">
                   <Layers className="w-3.5 h-3.5 mr-1.5 text-slate-600" />
-                  Watanobe Lab EDM Specifications
+                  Platform Specifications
                 </h4>
                 <ul className="text-xs text-slate-600 space-y-1.5 font-sans">
                   <li>• Sandbox: Isolate cgroup with seccomp-bpf enforcement.</li>
-                  <li>• Structural Analysis: gotreesitter AST complexity parsing.</li>
+                  <li>• Structural Analysis: Complexity parsing.</li>
                   <li>• Socratic Pedagogy: Virtual TA provides minimal-edit hints.</li>
                 </ul>
               </div>
@@ -472,7 +472,7 @@ export default function ProblemWorkspacePage() {
               Sandbox Evaluation
             </h3>
             <p className="text-xs text-slate-500 max-w-xs font-sans">
-              Executing binary inside Linux cgroup v2 container. Analyzing structural complexity via gotreesitter...
+              Executing binary inside Linux container. Analyzing structural complexity...
             </p>
           </div>
         ) : (
@@ -614,7 +614,7 @@ export default function ProblemWorkspacePage() {
           >
             <div className="flex items-center space-x-2 text-emerald-800 mb-3 font-mono text-xs uppercase tracking-wider">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Submission Accepted — EDM Verified</span>
+              <span>Submission Accepted</span>
             </div>
             
             <h3 className="text-xl font-serif font-medium text-slate-900 mb-2">
@@ -622,7 +622,7 @@ export default function ProblemWorkspacePage() {
             </h3>
             
             <p className="text-xs text-slate-600 leading-relaxed mb-6 font-sans">
-              Based on your <span className="font-semibold text-slate-800">Cognitive Effort Index</span> and structural AST analysis on this problem, we recommend this problem within your <span className="font-semibold text-slate-800">Zone of Proximal Development</span> (ZPD):
+              Based on your <span className="font-semibold text-slate-800">Performance</span> on this problem, we recommend this problem:
             </p>
 
             <div className="bg-white/80 border border-slate-900/10 p-4 mb-6 transition-all hover:border-slate-900/25">
@@ -631,7 +631,7 @@ export default function ProblemWorkspacePage() {
                   {recommendation.title}
                 </span>
                 <span className="text-[10px] font-mono bg-slate-900/5 text-slate-700 px-2 py-0.5 border border-slate-900/10">
-                  AST Complexity: {recommendation.difficulty_score?.toFixed(1) || "2.0"}
+                  Complexity: {recommendation.difficulty_score?.toFixed(1) || "2.0"}
                 </span>
               </div>
               <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">

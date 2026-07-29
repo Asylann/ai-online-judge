@@ -12,7 +12,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <title>AI Online Judge — Socratic Virtual TA & EDM</title>
         <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-        <meta name="description" content="AI-Powered Online Judge with Socratic Virtual TA & Effort-Based Educational Data Mining for Prof. Yutaka Watanobe's Lab." />
+        <meta name="description" content="AI-Powered Online Judge with Socratic Virtual TA." />
       </Head>
       <div className="min-h-screen relative flex flex-col bg-ivory-100 text-slate-900 selection:bg-amber-300 selection:text-slate-950">
         <AnimatedBackground />

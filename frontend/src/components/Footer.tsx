@@ -103,7 +103,7 @@ export const Footer: React.FC = () => {
           {/* Column 3: Academic & Technical Specs */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-              Watanobe Laboratory
+              AI Online Judge
             </h4>
             <ul className="space-y-2 text-xs font-mono text-slate-400">
               <li className="flex items-center space-x-2 py-0.5">
@@ -154,9 +154,9 @@ export const Footer: React.FC = () => {
         {/* Bottom Row: Copyright & All Rights Reserved */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400 pt-2">
           <div className="flex items-center space-x-1 text-center sm:text-left">
-            <span>© {new Date().getFullYear()} AI Online Judge Platform. Designed & Engineered for</span>
+            <span>© {new Date().getFullYear()} AI Online Judge Platform.</span>
             <span className="text-ivory-100 font-bold underline decoration-amber-500 underline-offset-4 ml-1">
-              Prof. Yutaka Watanobe&apos;s Laboratory
+              Educational Platforms
             </span>
             <span>. All rights reserved.</span>
           </div>

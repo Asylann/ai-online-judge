@@ -280,7 +280,7 @@ export default function ModulesPage() {
 						Structured Algorithmic Curriculum
 					</h1>
 					<p className="text-base sm:text-lg text-slate-600 max-w-3xl mt-3 font-sans leading-relaxed">
-						Progress systematically through Professor Watanobe&apos;s pedagogical roadmap. 
+						Progress systematically through the pedagogical roadmap.
 						Each problem is locked until you master its prerequisite in your Zone of Proximal Development.
 					</p>
 

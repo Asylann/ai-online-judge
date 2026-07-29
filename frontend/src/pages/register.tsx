@@ -54,7 +54,7 @@ export default function RegisterPage() {
       >
         <div className="mb-8">
           <span className="text-[11px] font-mono uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded">
-            Watanobe Lab Enrollment
+            Platform Enrollment
           </span>
           <h1 className="text-2xl font-serif font-semibold text-slate-900 mt-4 tracking-tight">
             Create Student Account

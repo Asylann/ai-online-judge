@@ -192,7 +192,7 @@ export default function AdminProblemWorkspacePage() {
                 </div>
                 <div>
                   <h3 className="font-serif font-bold text-slate-900 text-base">
-                    Gotreesitter Structural Logic Comparison
+                    Structural Logic Comparison
                   </h3>
                   <p className="text-xs font-mono text-slate-600 mt-1 leading-relaxed">
                     This admin tool cross-references all <span className="font-semibold text-slate-900">Accepted</span> student submissions for this specific problem ID ($O(M^2)$ strictly bounded per problem). It evaluates Abstract Syntax Tree (AST) node frequency distributions and structural loop/branching depths (<code className="bg-ivory-300 px-1 py-0.5 rounded">for_statement</code>, <code className="bg-ivory-300 px-1 py-0.5 rounded">if_statement</code>, <code className="bg-ivory-300 px-1 py-0.5 rounded">binary_expression</code>) to detect logic copying and plagiarism, even when students modify 100% of variable and function identifiers.
@@ -208,7 +208,7 @@ export default function AdminProblemWorkspacePage() {
                   Cross-referencing AST structural snapshots...
                 </p>
                 <p className="text-xs font-mono text-slate-500 mt-1">
-                  Walking gotreesitter frequency profiles across all accepted attempts.
+                  Walking frequency profiles across all accepted attempts.
                 </p>
               </div>
             ) : error ? (
@@ -422,7 +422,7 @@ export default function AdminProblemWorkspacePage() {
               {/* Modal Footer */}
               <div className="p-4 bg-ivory-200 border-t border-slate-300 flex items-center justify-between text-xs font-mono">
                 <span className="text-slate-600">
-                  ⚠️ Note: Even if identifiers (`i`, `j`, `temp`) are renamed, gotreesitter structural topology maps loops (`for/while`) and branching logic accurately.
+                  ⚠️ Note: Even if identifiers (`i`, `j`, `temp`) are renamed, structural topology maps loops (`for/while`) and branching logic accurately.
                 </span>
                 <button
                   onClick={() => setSelectedPair(null)}

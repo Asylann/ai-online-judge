@@ -170,15 +170,15 @@ export const HeroVisual: React.FC = () => {
           </div>
           <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
             <span className="text-slate-400 block text-[9px] uppercase tracking-wider">
-              AI Mentor
+              Virtual Assistant
             </span>
-            <span className="text-emerald-400 font-bold text-xs">GPT-4o-mini RAG</span>
+            <span className="text-emerald-400 font-bold text-xs">AI Powered</span>
           </div>
           <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
             <span className="text-slate-400 block text-[9px] uppercase tracking-wider">
               Metrics
             </span>
-            <span className="text-blue-400 font-bold text-xs">Effort-Based</span>
+            <span className="text-blue-400 font-bold text-xs">Analytics</span>
           </div>
         </div>
       </motion.div>

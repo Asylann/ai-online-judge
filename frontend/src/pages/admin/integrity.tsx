@@ -105,7 +105,7 @@ export default function AdminGlobalIntegrityPage() {
               <span>AST Plagiarism & Integrity Check Registry</span>
             </h1>
             <p className="text-xs font-mono text-slate-500 mt-1">
-              Cross-reference gotreesitter structural topology snapshots across all Accepted solutions ($O(M^2)$ strictly per problem)
+              Cross-reference structural topology snapshots across all Accepted solutions ($O(M^2)$ strictly per problem)
             </p>
           </div>
 
@@ -330,7 +330,7 @@ export default function AdminGlobalIntegrityPage() {
 
               <div className="p-4 bg-ivory-200 border-t border-slate-300 flex items-center justify-between text-xs font-mono">
                 <span className="text-slate-600">
-                  ⚠️ Note: Even if identifiers (`i`, `j`, `temp`) are renamed, gotreesitter structural topology maps loops (`for/while`) and branching logic accurately.
+                  ⚠️ Note: Even if identifiers (`i`, `j`, `temp`) are renamed, structural topology maps loops (`for/while`) and branching logic accurately.
                 </span>
                 <button
                   onClick={() => setSelectedPair(null)}
