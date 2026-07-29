@@ -154,7 +154,7 @@ export default function ProfileDashboardPage() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const userID = user?.id || "00000000-0000-0000-0000-000000000001";
 
-        const statsRes = await axios.get(`${API_URL}/api/v1/users/${userID}/stats`, { headers });
+        const statsRes = await axios.get(`${API_URL}/users/${userID}/stats`, { headers });
         if (statsRes.data) {
           const d = statsRes.data;
           setStatsSummary({
@@ -166,7 +166,7 @@ export default function ProfileDashboardPage() {
           });
         }
 
-        const subsRes = await axios.get(`${API_URL}/api/v1/users/${userID}/submissions`, { headers });
+        const subsRes = await axios.get(`${API_URL}/users/${userID}/submissions`, { headers });
         if (subsRes.data && Array.isArray(subsRes.data.submissions)) {
           const rawSubs = subsRes.data.submissions;
           const totalSubs = rawSubs.length;
