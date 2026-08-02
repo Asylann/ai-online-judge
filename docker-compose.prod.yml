@@ -10,14 +10,12 @@ services:
   nginx:
     image: ghcr.io/asylann/ai-online-judge-nginx:latest
     container_name: ai_judge_nginx
-    ports:
-      - "80:80"
     depends_on:
       - frontend
       - api-gateway
       - websocket-service
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -38,7 +36,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -54,7 +52,7 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -73,7 +71,7 @@ services:
       retries: 10
       start_period: 60s
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
     deploy:
@@ -100,7 +98,7 @@ services:
       rabbitmq:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -123,7 +121,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -138,7 +136,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -157,7 +155,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -172,7 +170,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -187,15 +185,15 @@ services:
       - api-gateway
       - websocket-service
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
 networks:
-  ai-judge-network:
-    driver: bridge
+  shared-web-network:\r\n    external: true
 
 volumes:
   postgres_prod_data:
   redis_prod_data:
   rabbitmq_prod_data:
+
