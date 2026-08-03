@@ -1,4 +1,4 @@
-﻿name: ai-online-judge-prod
+name: ai-online-judge-prod
 
 x-logging: &default-logging
   driver: "json-file"
