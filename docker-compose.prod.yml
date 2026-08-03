@@ -1,4 +1,4 @@
-name: ai-online-judge-prod
+﻿name: ai-online-judge-prod
 
 x-logging: &default-logging
   driver: "json-file"
@@ -66,8 +66,8 @@ services:
       - rabbitmq_prod_data:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 20s # Проверять реже
-      timeout: 15s # Дать больше времени скрипту диагностики
+      interval: 20s # РџСЂРѕРІРµСЂСЏС‚СЊ СЂРµР¶Рµ
+      timeout: 15s # Р”Р°С‚СЊ Р±РѕР»СЊС€Рµ РІСЂРµРјРµРЅРё СЃРєСЂРёРїС‚Сѓ РґРёР°РіРЅРѕСЃС‚РёРєРё
       retries: 10
       start_period: 60s
     networks:
@@ -190,10 +190,12 @@ services:
     logging: *default-logging
 
 networks:
-  shared-web-network:\r\n    external: true
+  shared-web-network:
+    external: true
 
 volumes:
   postgres_prod_data:
   redis_prod_data:
   rabbitmq_prod_data:
+
 
