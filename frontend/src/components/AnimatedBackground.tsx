@@ -1,158 +1,179 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef } from "react";
+import { motion, useMotionValue, useTransform, useScroll } from "framer-motion";
 
 export const AnimatedBackground: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const { scrollY } = useScroll();
+  const scrollProgress = useTransform(scrollY, [0, 3000], [0, 1]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let time = 0;
+    let mx = 0.5;
+    let my = 0.5;
+
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const handleMouse = (e: MouseEvent) => {
+      mx = e.clientX / width;
+      my = e.clientY / height;
+      mouseX.set(mx);
+      mouseY.set(my);
+    };
+    window.addEventListener("mousemove", handleMouse);
+
+    interface Node {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      radius: number;
+      baseX: number;
+      baseY: number;
+    }
+
+    const nodes: Node[] = Array.from({ length: 40 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      radius: Math.random() * 2 + 1,
+      baseX: Math.random() * width,
+      baseY: Math.random() * height,
+    }));
+
+    const draw = () => {
+      time += 0.003;
+      ctx.clearRect(0, 0, width, height);
+
+      const scroll = scrollProgress.get();
+      const hueShift = scroll * 30;
+
+      nodes.forEach((node) => {
+        const pullX = (mx - 0.5) * 80;
+        const pullY = (my - 0.5) * 80;
+
+        node.x += node.vx + Math.sin(time + node.baseX * 0.01) * 0.4;
+        node.y += node.vy + Math.cos(time + node.baseY * 0.01) * 0.4;
+
+        node.x += (node.baseX + pullX - node.x) * 0.005;
+        node.y += (node.baseY + pullY - node.y) * 0.005;
+
+        if (node.x < 0) node.x = width;
+        if (node.x > width) node.x = 0;
+        if (node.y < 0) node.y = height;
+        if (node.y > height) node.y = 0;
+      });
+
+      const maxDist = 180;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(20, 20, 19, ${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      nodes.forEach((node) => {
+        const glow = 0.12 + Math.sin(time * 2 + node.baseX) * 0.05;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(20, 20, 19, ${glow})`;
+        ctx.fill();
+      });
+
+      const gx = width * 0.5 + Math.sin(time * 0.7) * width * 0.2 + (mx - 0.5) * 200;
+      const gy = height * 0.4 + Math.cos(time * 0.5) * height * 0.15 + (my - 0.5) * 150;
+      const gradient = ctx.createRadialGradient(gx, gy, 0, gx, gy, 500);
+      gradient.addColorStop(0, `hsla(${38 + hueShift}, 70%, 55%, 0.04)`);
+      gradient.addColorStop(0.5, `hsla(${38 + hueShift}, 60%, 50%, 0.02)`);
+      gradient.addColorStop(1, "transparent");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      const g2x = width * 0.7 + Math.cos(time * 0.4) * width * 0.15;
+      const g2y = height * 0.7 + Math.sin(time * 0.6) * height * 0.1;
+      const gradient2 = ctx.createRadialGradient(g2x, g2y, 0, g2x, g2y, 400);
+      gradient2.addColorStop(0, `hsla(${220 + hueShift}, 30%, 40%, 0.025)`);
+      gradient2.addColorStop(1, "transparent");
+      ctx.fillStyle = gradient2;
+      ctx.fillRect(0, 0, width, height);
+
+      animationId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", handleMouse);
+    };
+  }, [mouseX, mouseY, scrollProgress]);
+
+  const meshRotate = useTransform(scrollY, [0, 2000], [0, 15]);
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-ivory-100 [perspective:1200px]">
-      {/* 1. Subtle Animated Technical Grid (Architectural Blueprint Feel) */}
-      <motion.div
-        className="absolute inset-0 opacity-[0.038]"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, #141413 1px, transparent 1px),
-            linear-gradient(to bottom, #141413 1px, transparent 1px)
-          `,
-          backgroundSize: "48px 48px",
-        }}
-        animate={{
-          backgroundPosition: ["0px 0px", "48px 48px"],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "linear",
-        }}
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-ivory-100">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ opacity: 0.9 }}
       />
 
-      {/* 2. Soft 3D Ambient Studio Shadow Orbs (Breathing Depth & Lighting) */}
       <motion.div
-        className="absolute -top-[20%] -left-[10%] w-[650px] h-[650px] rounded-full bg-slate-900/[0.045] blur-3xl transform-gpu"
-        animate={{
-          scale: [1, 1.15, 1],
-          x: [0, 45, 0],
-          y: [0, 35, 0],
-        }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute top-[28%] -right-[15%] w-[750px] h-[750px] rounded-full bg-amber-500/[0.06] blur-3xl transform-gpu"
-        animate={{
-          scale: [1, 1.22, 1],
-          x: [0, -55, 0],
-          y: [0, -45, 0],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute -bottom-[20%] left-[25%] w-[680px] h-[680px] rounded-full bg-slate-900/[0.035] blur-3xl transform-gpu"
-        animate={{
-          scale: [1.1, 0.95, 1.1],
-          x: [0, 35, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* 3. Floating 3D Geometric Isometric Data Modules & AST Nodes */}
-      {/* 3D Isometric Hologram 1 — Top Right Sandbox Isolate */}
-      <motion.div
-        className="absolute top-[14%] right-[11%] w-28 h-28 rounded-3xl border border-slate-900/15 bg-white/75 backdrop-blur-md shadow-[0_25px_60px_rgba(20,20,19,0.09)] flex flex-col items-center justify-center transform -rotate-12 [transform-style:preserve-3d]"
-        animate={{
-          y: [-14, 14, -14],
-          rotateX: [10, 20, 10],
-          rotateY: [-15, -5, -15],
-          rotateZ: [-12, -8, -12],
-        }}
-        transition={{
-          duration: 9,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        className="absolute inset-0"
+        style={{ rotate: meshRotate }}
       >
-        <div className="w-14 h-14 rounded-2xl border border-amber-500/40 bg-amber-500/15 shadow-inner flex items-center justify-center">
-          <motion.div
-            className="w-5 h-5 rounded-full bg-amber-500 shadow-[0_0_16px_rgba(245,158,11,0.7)]"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity }}
-          />
-        </div>
-        <span className="text-[9px] font-mono font-bold text-slate-500 mt-2 tracking-tighter uppercase">Isolate 3D</span>
-      </motion.div>
-
-      {/* 3D Isometric Hologram 2 — Left Center AST Node */}
-      <motion.div
-        className="absolute top-[42%] left-[5%] w-24 h-24 rounded-2xl border border-slate-900/15 bg-white/80 backdrop-blur-md shadow-[0_25px_65px_rgba(20,20,19,0.08)] flex flex-col items-center justify-center transform rotate-6 [transform-style:preserve-3d]"
-        animate={{
-          y: [16, -16, 16],
-          rotateX: [12, -5, 12],
-          rotateY: [15, 25, 15],
-          rotateZ: [6, 14, 6],
-        }}
-        transition={{
-          duration: 11,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <div className="w-11 h-11 rounded-xl border border-slate-900/20 bg-slate-900/10 flex items-center justify-center">
-          <div className="w-3.5 h-3.5 rounded-sm bg-slate-900 shadow-sm" />
-        </div>
-        <span className="text-[9px] font-mono font-bold text-slate-600 mt-1.5 tracking-tighter uppercase">AST Tree</span>
-      </motion.div>
-
-      {/* 3D Isometric Hologram 3 — Bottom Right Neural Block */}
-      <motion.div
-        className="absolute bottom-[22%] right-[16%] w-20 h-20 rounded-2xl border border-amber-500/30 bg-amber-100/50 backdrop-blur-md shadow-[0_18px_40px_rgba(245,158,11,0.15)] flex flex-col items-center justify-center transform -rotate-6 [transform-style:preserve-3d]"
-        animate={{
-          y: [-12, 16, -12],
-          rotateX: [15, 5, 15],
-          rotateY: [-10, -20, -10],
-          rotateZ: [-6, 4, -6],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
-        <div className="w-8 h-8 rounded-lg border border-amber-500/50 bg-amber-500/25 flex items-center justify-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-700" />
-        </div>
-        <span className="text-[8px] font-mono font-bold text-amber-900 mt-1 uppercase tracking-tight">ZPD Node</span>
-      </motion.div>
-
-      {/* 4. Subliminal Floating Architectural Crosshairs (+) & Laser Tracing Lines */}
-      <motion.div
-        className="absolute top-[22%] left-[26%] text-slate-900/20 font-mono text-2xl select-none"
-        animate={{ opacity: [0.15, 0.4, 0.15], scale: [0.95, 1.05, 0.95] }}
-        transition={{ duration: 6, repeat: Infinity }}
-      >
-        +
-      </motion.div>
-      <motion.div
-        className="absolute bottom-[32%] left-[42%] text-amber-600/25 font-mono text-3xl select-none"
-        animate={{ opacity: [0.1, 0.35, 0.1], rotate: [0, 90, 0] }}
-        transition={{ duration: 12, repeat: Infinity }}
-      >
-        +
-      </motion.div>
-      <motion.div
-        className="absolute top-[68%] right-[30%] text-slate-900/20 font-mono text-2xl select-none"
-        animate={{ opacity: [0.2, 0.45, 0.2] }}
-        transition={{ duration: 7, repeat: Infinity }}
-      >
-        +
+        <motion.div
+          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[120px] transform-gpu"
+          style={{
+            background: "radial-gradient(circle, rgba(217,119,6,0.06) 0%, transparent 70%)",
+          }}
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 60, 0],
+            y: [0, 40, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[100px] transform-gpu"
+          style={{
+            background: "radial-gradient(circle, rgba(20,20,19,0.04) 0%, transparent 70%)",
+          }}
+          animate={{
+            scale: [1.1, 0.9, 1.1],
+            x: [0, -40, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+        />
       </motion.div>
     </div>
   );

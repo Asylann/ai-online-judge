@@ -15,7 +15,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -542,91 +541,15 @@ func (s *judgeService) failSubmission(ctx context.Context, task models.JudgeTask
 	s.publishVerdictEvent(ctx, task.SubmissionID, task.UserID, status, 0, 0, 0, 0)
 }
 
-// executeLocalTestCase runs the code inside the local container cgroup/runtime when Judge0 public cloud queues or lags.
+// executeLocalTestCase is disabled for security — all execution must go through Judge0 sandbox.
+// Returns a Runtime Error verdict indicating Judge0 is unavailable.
 func (s *judgeService) executeLocalTestCase(ctx context.Context, task models.JudgeTask, tc models.TestCase) *judge0Result {
-	start := time.Now()
-	decodedCode, _ := base64.StdEncoding.DecodeString(task.CodeBase64)
-	codeStr := string(decodedCode)
-
-	execCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
-	var cmd *exec.Cmd
-	switch task.Language {
-	case "python3":
-		// Fast native execution inside the judge-worker container
-		// Avoids the 1-2s Docker spin-up time that causes TLE on the 1GB VM
-		cmdArgs := []string{"-c", codeStr}
-		cmd = exec.CommandContext(execCtx, "python3", cmdArgs...)
-	default:
-		// For built-in verification or languages not locally installed in alpine stage, verify structural algorithm expectations
-		if strings.Contains(codeStr, "twoSum") || strings.Contains(codeStr, "TwoSum") {
-			if strings.Contains(codeStr, "return") && (strings.Contains(codeStr, "[") || strings.Contains(codeStr, "vector")) {
-				execMs := int(time.Since(start).Milliseconds()) + 2
-				return &judge0Result{
-					Status: judge0Status{ID: 3, Description: "Accepted"},
-					Time:   fmt.Sprintf("%f", float64(execMs)/1000.0),
-					Memory: 3328,
-				}
-			}
-		}
-		return &judge0Result{Status: judge0Status{ID: 4, Description: "Wrong Answer"}, Memory: 3300}
-	}
-
-	var outBuf, errBuf bytes.Buffer
-	cmd.Stdin = strings.NewReader(tc.Stdin)
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &errBuf
-
-	err := cmd.Run()
-	execTimeSec := float64(time.Since(start).Milliseconds()) / 1000.0
-	if execTimeSec < 0.001 {
-		execTimeSec = 0.005
-	}
-
-	if execCtx.Err() == context.DeadlineExceeded {
-		return &judge0Result{
-			Status: judge0Status{ID: 5, Description: "Time Limit Exceeded"},
-			Time:   fmt.Sprintf("%f", execTimeSec),
-			Memory: 3500,
-		}
-	}
-
-	if err != nil {
-		return &judge0Result{
-			Status: judge0Status{ID: 11, Description: "Runtime Error (NZEC)"},
-			Time:   fmt.Sprintf("%f", execTimeSec),
-			Memory: 3400,
-		}
-	}
-
-	actualOut := strings.TrimSpace(outBuf.String())
-	expectedOut := strings.TrimSpace(tc.ExpectedOutput)
-
-	statusID := 3 // Accepted
-	if actualOut != expectedOut {
-		statusID = 4 // Wrong Answer
-	}
-
+	log.Printf("[judge-worker] SECURITY: local execution disabled — Judge0 unavailable for submission %s", task.SubmissionID)
 	return &judge0Result{
-		Status: judge0Status{ID: statusID, Description: judge0VerdictToDescription(statusID)},
-		Time:   fmt.Sprintf("%f", execTimeSec),
-		Memory: 3420,
+		Status: judge0Status{ID: 13, Description: "Internal Error"},
+		Stderr: "Judge0 sandbox unavailable. Local execution is disabled for security.",
+		Memory: 0,
 	}
 }
 
-func judge0VerdictToDescription(id int) string {
-	switch id {
-	case 3:
-		return "Accepted"
-	case 4:
-		return "Wrong Answer"
-	case 5:
-		return "Time Limit Exceeded"
-	case 6:
-		return "Compilation Error"
-	default:
-		return "Runtime Error"
-	}
-}
 
