@@ -100,7 +100,7 @@ export const Navbar: React.FC = () => {
                 scrolled ? "hidden xl:flex" : "hidden md:flex"
               }`}>
                 <span>Platform Analytics</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span className="text-emerald-700 font-bold">Live</span>
               </span>
             </div>

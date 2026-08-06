@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import dynamic from "next/dynamic";
 import type { SubmissionMetric } from "@/components/EffortDashboard";
 
@@ -68,8 +69,7 @@ const sampleBaselineMetrics: SubmissionMetric[] = [
 function ValueProposition() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [60, -30]);
+  const isMobile = useIsMobile();
 
   const cards = [
     { title: "Submit your code", desc: "Write in any language. We handle the rest.", icon: <Code className="w-6 h-6" /> },
@@ -77,9 +77,37 @@ function ValueProposition() {
     { title: "Track your growth", desc: "See exactly how you're improving over time.", icon: <Activity className="w-6 h-6" /> },
   ];
 
+  if (isMobile) {
+    return (
+      <section ref={ref} className="relative py-8">
+        <div className="text-center space-y-4 mb-10">
+          <h2 className="text-3xl font-serif font-medium text-slate-900 tracking-tight">
+            Practice smarter. <span className="text-slate-400">Not harder.</span>
+          </h2>
+          <p className="text-base text-slate-500 max-w-lg mx-auto">
+            An AI tutor that watches your code, understands your mistakes, and guides you to the solution — without spoiling it.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {cards.map((card) => (
+            <div key={card.title} className="relative group bg-ivory-100 rounded-2xl border border-slate-900/10 p-6 overflow-hidden">
+              <div className="space-y-3">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900/5 text-slate-700">
+                  {card.icon}
+                </div>
+                <h3 className="text-lg font-serif font-semibold text-slate-900 tracking-tight">{card.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{card.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section ref={ref} className="relative py-12">
-      <motion.div className="text-center space-y-4 mb-14" style={{ y }}>
+      <div className="text-center space-y-4 mb-14">
         <motion.h2
           className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium text-slate-900 tracking-tight"
           initial={{ opacity: 0, y: 50 }}
@@ -97,7 +125,7 @@ function ValueProposition() {
         >
           An AI tutor that watches your code, understands your mistakes, and guides you to the solution — without spoiling it.
         </motion.p>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {cards.map((card, i) => (
@@ -131,6 +159,7 @@ function ValueProposition() {
 // ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, authReady } = useAuth();
+  const isMobile = useIsMobile();
   const [problems, setProblems] = useState<Problem[]>(mockProblems);
   const [modules, setModules] = useState<any[]>([]);
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
@@ -212,7 +241,7 @@ export default function DashboardPage() {
     fetchEDMMetrics();
   }, [authReady, user]);
 
-  const filteredProblems = problems.filter((prob) => {
+  const filteredProblems = useMemo(() => problems.filter((prob) => {
     const matchesSearch =
       prob.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prob.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -221,54 +250,77 @@ export default function DashboardPage() {
     if (difficultyFilter === "medium") return (prob.difficulty_score >= 2.0 && prob.difficulty_score < 3.8) || prob.difficulty === "medium";
     if (difficultyFilter === "hard") return prob.difficulty_score >= 3.8 || prob.difficulty === "hard";
     return true;
-  });
+  }), [problems, searchQuery, difficultyFilter]);
 
   return (
     <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 py-12 sm:py-16 space-y-20">
-      {/* Hero with parallax fade */}
-      <motion.section
-        ref={heroRef}
-        className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
-        style={{ y: heroY, opacity: heroOpacity }}
-      >
-        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
-          >
-            <Activity className="w-4 h-4 text-amber-600 animate-pulse" />
-            <span>Society 5.0 Smart Learning & Educational Data Mining</span>
-          </motion.div>
+      {/* Hero — no parallax on mobile */}
+      {isMobile ? (
+        <section ref={heroRef} className="grid grid-cols-1 gap-8 items-center">
+          <div className="space-y-5 text-center">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm">
+              <Activity className="w-4 h-4 text-amber-600" />
+              <span>Society 5.0 Smart Learning & EDM</span>
+            </div>
 
-          <motion.h1
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-4xl sm:text-5xl lg:text-7xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap justify-center lg:justify-start gap-x-3 gap-y-1"
-          >
-            {HERO_TEXT.split(" ").map((word, index) => (
-              <motion.span key={index} variants={wordVariants} className="inline-block">
-                {word}
-              </motion.span>
-            ))}
-          </motion.h1>
+            <h1 className="text-3xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15]">
+              {HERO_TEXT}
+            </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-            className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl mx-auto lg:mx-0"
-          >
-            {HERO_SUBTEXT}
-          </motion.p>
-        </div>
+            <p className="text-base text-slate-600 font-sans tracking-tight leading-relaxed">
+              {HERO_SUBTEXT}
+            </p>
+          </div>
 
-        <div className="lg:col-span-5 w-full">
-          <HeroVisual />
-        </div>
-      </motion.section>
+          <div className="w-full">
+            <HeroVisual />
+          </div>
+        </section>
+      ) : (
+        <motion.section
+          ref={heroRef}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+          style={{ y: heroY, opacity: heroOpacity }}
+        >
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
+            >
+              <Activity className="w-4 h-4 text-amber-600" />
+              <span>Society 5.0 Smart Learning & Educational Data Mining</span>
+            </motion.div>
+
+            <motion.h1
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="text-4xl sm:text-5xl lg:text-7xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap justify-center lg:justify-start gap-x-3 gap-y-1"
+            >
+              {HERO_TEXT.split(" ").map((word, index) => (
+                <motion.span key={index} variants={wordVariants} className="inline-block">
+                  {word}
+                </motion.span>
+              ))}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
+              className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl mx-auto lg:mx-0"
+            >
+              {HERO_SUBTEXT}
+            </motion.p>
+          </div>
+
+          <div className="lg:col-span-5 w-full">
+            <HeroVisual />
+          </div>
+        </motion.section>
+      )}
 
       {/* SCROLL ANIMATION #1 — Value Proposition */}
       <ValueProposition />
@@ -334,13 +386,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          {filteredProblems.map((prob, idx) => (
-            <motion.div
+          {filteredProblems.map((prob) => (
+            <div
               key={prob.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05 * idx }}
-              className="group flex flex-col justify-between bg-ivory-100 p-6 rounded-2xl border border-slate-900/10 transition-all duration-300 ease-out hover:border-slate-900/30 hover:scale-[1.02] shadow-sm relative overflow-hidden"
+              className="group flex flex-col justify-between bg-ivory-100 p-6 rounded-2xl border border-slate-900/10 transition-colors duration-200 hover:border-slate-900/30 shadow-sm relative overflow-hidden"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -366,7 +415,7 @@ export default function DashboardPage() {
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>

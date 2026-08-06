@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
         <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 border-2 border-slate-800 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6 transition-all duration-300 hover:border-slate-700">
           <div className="space-y-2 text-center lg:text-left">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-              <Sparkles className="w-3.5 h-3.5 animate-spin text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>ZPD Interactive Engine Active</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-ivory-100">
@@ -65,7 +65,7 @@ export const Footer: React.FC = () => {
               Polyglot microservice platform engineered for research in Educational Data Mining (EDM) and AST structural logic error analysis.
             </p>
             <div className="flex items-center space-x-2 text-[11px] font-mono text-emerald-400 font-bold bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800 w-fit">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span>Isolate cgroups v2 Secure Sandbox</span>
             </div>
           </div>

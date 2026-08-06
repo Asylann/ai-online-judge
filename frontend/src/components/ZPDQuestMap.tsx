@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, memo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Link from "next/link";
 import {
@@ -11,6 +11,7 @@ import {
   MapPin,
   Layers,
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const EASE = [0.16, 1, 0.3, 1];
 
@@ -52,8 +53,52 @@ function assignModule(prob: Problem): string {
   return "b1000000-0000-4000-a000-000000000003";
 }
 
-// ─── Unique visual landmark per problem ───────────────────────────────────────
-function ProblemVisual({ title }: { title: string }) {
+// ─── Static visual landmark per problem (no animations, used on mobile) ──────
+function StaticProblemVisual({ title }: { title: string }) {
+  const t = title.toLowerCase();
+
+  if (t.includes("sum") || t.includes("hash") || t.includes("indexing")) {
+    return (
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full bg-amber-500/30 border-2 border-amber-500 absolute top-1 left-1" />
+        <div className="w-5 h-5 rounded-full bg-emerald-500/30 border-2 border-emerald-500 absolute bottom-1 right-1" />
+        <span className="text-[8px] font-mono font-bold text-slate-500 z-10">K:V</span>
+      </div>
+    );
+  }
+  if (t.includes("tree") || t.includes("bst") || t.includes("balanced")) {
+    return (
+      <div className="relative w-12 h-12">
+        <svg className="w-full h-full" viewBox="0 0 48 48">
+          <line x1="24" y1="10" x2="14" y2="28" stroke="#a855f7" strokeWidth="1.5" opacity="0.6" />
+          <line x1="24" y1="10" x2="34" y2="28" stroke="#a855f7" strokeWidth="1.5" opacity="0.6" />
+          <circle cx="24" cy="10" r="4" fill="rgba(168,85,247,0.3)" stroke="#a855f7" strokeWidth="1.5" />
+        </svg>
+      </div>
+    );
+  }
+  if (t.includes("graph") || t.includes("topological") || t.includes("course")) {
+    return (
+      <div className="relative w-12 h-12">
+        <svg className="w-full h-full" viewBox="0 0 48 48">
+          <circle cx="12" cy="20" r="4" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" strokeWidth="1.5" />
+          <circle cx="36" cy="14" r="4" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" strokeWidth="1.5" />
+          <circle cx="28" cy="36" r="4" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" strokeWidth="1.5" />
+          <line x1="12" y1="20" x2="36" y2="14" stroke="#3b82f6" strokeWidth="1" opacity="0.5" />
+          <line x1="12" y1="20" x2="28" y2="36" stroke="#3b82f6" strokeWidth="1" opacity="0.5" />
+        </svg>
+      </div>
+    );
+  }
+  return (
+    <div className="w-12 h-12 rounded-xl bg-slate-900/10 border border-slate-900/20 flex items-center justify-center">
+      <span className="text-xs font-mono font-bold text-slate-400">{"</>"}</span>
+    </div>
+  );
+}
+
+// ─── Unique visual landmark per problem (animated, desktop only) ─────────────
+const ProblemVisual = memo(function ProblemVisual({ title }: { title: string }) {
   const t = title.toLowerCase();
 
   if (t.includes("sum") || t.includes("hash") || t.includes("indexing")) {
@@ -148,13 +193,11 @@ function ProblemVisual({ title }: { title: string }) {
   if (t.includes("anagram") || t.includes("group")) {
     return (
       <div className="relative w-16 h-16 flex items-center justify-center">
-        <motion.div className="grid grid-cols-3 gap-0.5"
-          animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+        <div className="grid grid-cols-3 gap-0.5">
           {["e", "a", "t", "t", "e", "a", "a", "t", "e"].map((ch, i) => (
-            <motion.div key={i} className="w-3.5 h-3.5 rounded-sm bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-[6px] font-mono font-bold text-orange-400"
-              animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, delay: i * 0.12, repeat: Infinity, ease: "easeInOut" }}>{ch}</motion.div>
+            <div key={i} className="w-3.5 h-3.5 rounded-sm bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-[6px] font-mono font-bold text-orange-400">{ch}</div>
           ))}
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -164,9 +207,7 @@ function ProblemVisual({ title }: { title: string }) {
       <div className="relative w-16 h-16 flex items-center justify-center">
         <div className="grid grid-cols-4 gap-0.5">
           {Array.from({ length: 12 }).map((_, i) => (
-            <motion.div key={i} className="w-3 h-3 rounded-sm border border-teal-500/40"
-              animate={{ backgroundColor: ["rgba(20,184,166,0)", "rgba(20,184,166,0.3)", "rgba(20,184,166,0)"] }}
-              transition={{ duration: 2, delay: i * 0.12, repeat: Infinity, ease: "easeInOut" }} />
+            <div key={i} className="w-3 h-3 rounded-sm border border-teal-500/40 bg-teal-500/15" />
           ))}
         </div>
       </div>
@@ -186,8 +227,7 @@ function ProblemVisual({ title }: { title: string }) {
         </svg>
         <div className="absolute top-[30%] left-[18%] w-4 h-4 rounded-full bg-blue-500/30 border-2 border-blue-500" />
         <div className="absolute top-[16%] right-[24%] w-4 h-4 rounded-full bg-blue-500/30 border-2 border-blue-500" />
-        <motion.div className="absolute bottom-[24%] left-[40%] w-4 h-4 rounded-full bg-blue-500/40 border-2 border-blue-400"
-          animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+        <div className="absolute bottom-[24%] left-[40%] w-4 h-4 rounded-full bg-blue-500/40 border-2 border-blue-400" />
       </div>
     );
   }
@@ -195,8 +235,7 @@ function ProblemVisual({ title }: { title: string }) {
   if (t.includes("priority") || t.includes("heap") || t.includes("k sorted") || t.includes("merge k")) {
     return (
       <div className="relative w-16 h-16 flex items-center justify-center">
-        <motion.div className="flex flex-col items-center space-y-0.5"
-          animate={{ y: [0, -2, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+        <div className="flex flex-col items-center space-y-0.5">
           <div className="w-5 h-5 rounded bg-rose-500/30 border border-rose-500 flex items-center justify-center text-[8px] font-bold text-rose-400">1</div>
           <div className="flex space-x-0.5">
             <div className="w-4 h-4 rounded bg-rose-500/20 border border-rose-500/60 flex items-center justify-center text-[7px] font-bold text-rose-300">3</div>
@@ -205,7 +244,7 @@ function ProblemVisual({ title }: { title: string }) {
           <div className="flex space-x-0.5">
             {[5, 6, 8].map(n => <div key={n} className="w-3 h-3 rounded bg-rose-500/10 border border-rose-500/40 flex items-center justify-center text-[6px] text-rose-300">{n}</div>)}
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -215,8 +254,7 @@ function ProblemVisual({ title }: { title: string }) {
     return (
       <div className="relative w-16 h-16 flex items-end justify-center pb-1 space-x-[1px]">
         {heights.map((h, i) => (
-          <motion.div key={i} className="w-1.5 bg-cyan-500/60 rounded-t-sm" style={{ height: `${h * 13}%` }}
-            animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, delay: i * 0.1, repeat: Infinity, ease: "easeInOut" }} />
+          <div key={i} className="w-1.5 bg-cyan-500/60 rounded-t-sm" style={{ height: `${h * 13}%` }} />
         ))}
       </div>
     );
@@ -230,7 +268,7 @@ function ProblemVisual({ title }: { title: string }) {
             const isQueen = [1, 6, 8, 15].includes(i);
             return (
               <div key={i} className={`w-3.5 h-3.5 border border-slate-700/30 flex items-center justify-center text-[7px] ${(Math.floor(i / 4) + i % 4) % 2 === 0 ? "bg-slate-800/20" : ""}`}>
-                {isQueen && <motion.span className="text-amber-400 font-bold" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, delay: i * 0.05, repeat: Infinity }}>Q</motion.span>}
+                {isQueen && <span className="text-amber-400 font-bold">Q</span>}
               </div>
             );
           })}
@@ -242,35 +280,79 @@ function ProblemVisual({ title }: { title: string }) {
   if (t.includes("alien") || t.includes("dictionary") || t.includes("order")) {
     return (
       <div className="relative w-16 h-16 flex items-center justify-center">
-        <motion.div className="flex items-center space-x-0.5"
-          animate={{ x: [-3, 3, -3] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-          {"wertf".split("").map((ch, i) => (
-            <motion.div key={ch} className="w-4 h-5 rounded bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center text-[8px] font-mono font-bold text-indigo-400"
-              animate={{ y: [0, -2, 0] }} transition={{ duration: 2, delay: i * 0.15, repeat: Infinity, ease: "easeInOut" }}>{ch}</motion.div>
+        <div className="flex items-center space-x-0.5">
+          {"wertf".split("").map((ch) => (
+            <div key={ch} className="w-4 h-5 rounded bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center text-[8px] font-mono font-bold text-indigo-400">{ch}</div>
           ))}
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="relative w-16 h-16 flex items-center justify-center">
-      <motion.div className="w-10 h-10 rounded-xl bg-slate-900/10 border border-slate-900/20 flex items-center justify-center"
-        animate={{ scale: [1, 1.08, 1], rotate: [0, 3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+      <div className="w-10 h-10 rounded-xl bg-slate-900/10 border border-slate-900/20 flex items-center justify-center">
         <span className="text-sm font-mono font-bold text-slate-400">{"</>"}</span>
-      </motion.div>
+      </div>
     </div>
   );
-}
+})
 
 // ─── Single Journey Node ──────────────────────────────────────────────────────
-function JourneyNode({ problem, index, isPassed, isNext }: {
-  problem: Problem; index: number; isPassed: boolean; isNext: boolean;
+const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext, isMobile }: {
+  problem: Problem; index: number; isPassed: boolean; isNext: boolean; isMobile: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const isEven = index % 2 === 0;
   const diffScore = problem.difficulty_score || 2.0;
+
+  if (isMobile) {
+    return (
+      <div ref={ref} className="relative flex flex-col gap-3">
+        <div className="w-full">
+          <div className={`relative rounded-2xl p-4 border-2 overflow-hidden ${
+            isPassed ? "border-emerald-500/40 bg-emerald-50/30" : isNext ? "border-amber-500 bg-amber-50/40 shadow-md shadow-amber-500/10" : "border-slate-200 bg-ivory-100"
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 space-y-2 min-w-0">
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    isPassed ? "bg-emerald-100 text-emerald-800" : isNext ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    <MapPin className="w-2.5 h-2.5" />
+                    <span>Stage {index + 1}</span>
+                  </span>
+                  {isPassed && <span className="flex items-center space-x-1 text-[10px] font-mono text-emerald-600"><Trophy className="w-3 h-3" /><span>Done</span></span>}
+                  {isNext && <span className="flex items-center space-x-1 text-[10px] font-mono text-amber-700 font-bold"><Zap className="w-3 h-3" /><span>Up Next</span></span>}
+                </div>
+
+                <h4 className="text-sm font-serif font-semibold text-slate-900 leading-snug">
+                  {problem.title}
+                </h4>
+
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden max-w-[100px]">
+                    <div
+                      className={`h-full rounded-full ${diffScore < 2 ? "bg-emerald-500" : diffScore < 3.5 ? "bg-amber-500" : "bg-red-500"}`}
+                      style={{ width: `${(diffScore / 5.5) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">{diffScore.toFixed(1)}</span>
+                </div>
+
+                <Link href={`/problems/${problem.id}`}
+                  className={`inline-flex items-center space-x-1 text-xs font-semibold transition-colors ${isNext ? "text-amber-800 hover:text-amber-900" : "text-slate-700 hover:text-slate-900"}`}>
+                  <span>{isPassed ? "Review" : "Start"}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -282,31 +364,24 @@ function JourneyNode({ problem, index, isPassed, isNext }: {
     >
       {/* Connector dot */}
       <div className="hidden md:flex absolute left-[46px] top-1/2 -translate-y-1/2 -translate-x-1/2 z-20">
-        <motion.div
+        <div
           className={`w-9 h-9 rounded-full border-[3px] flex items-center justify-center text-xs font-mono font-bold shadow-md ${
             isPassed ? "bg-emerald-500 border-ivory-100 text-white" : isNext ? "bg-amber-500 border-slate-900 text-slate-900" : "bg-slate-200 border-slate-300 text-slate-500"
           }`}
-          animate={isNext ? { scale: [1, 1.1, 1] } : {}}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           {isPassed ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
-        </motion.div>
+        </div>
       </div>
 
       {/* Card */}
       <div className={`w-full md:w-[calc(50%-56px)] ${isEven ? "md:ml-[92px]" : "md:mr-[92px]"}`}>
-        <motion.div
-          className={`relative rounded-2xl p-4 sm:p-5 border-2 transition-all overflow-hidden ${
+        <div
+          className={`relative rounded-2xl p-4 sm:p-5 border-2 transition-all overflow-hidden hover:-translate-y-0.5 ${
             isPassed ? "border-emerald-500/40 bg-emerald-50/30" : isNext ? "border-amber-500 bg-amber-50/40 shadow-lg shadow-amber-500/10" : "border-slate-200 bg-ivory-100 hover:border-slate-300"
           }`}
-          whileHover={{ y: -3 }}
-          transition={{ duration: 0.25 }}
         >
           {isNext && (
-            <motion.div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500"
-              animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              style={{ backgroundSize: "200% 100%" }} />
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
           )}
 
           <div className="flex items-start justify-between gap-3">
@@ -349,11 +424,11 @@ function JourneyNode({ problem, index, isPassed, isNext }: {
               <ProblemVisual title={problem.title} />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );
-}
+})
 
 // ─── Journey Path SVG ─────────────────────────────────────────────────────────
 function JourneyPath({ count }: { count: number }) {
@@ -391,6 +466,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
 }) => {
   const [activeModuleIdx, setActiveModuleIdx] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "6%"]);
 
@@ -429,10 +505,12 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
 
   return (
     <section ref={containerRef} className="relative rounded-3xl border border-slate-900/10 bg-gradient-to-b from-ivory-100 via-ivory-200/30 to-ivory-100 overflow-hidden py-10 px-4 sm:px-8">
-      {/* Parallax bg */}
-      <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
-        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(20,20,19,0.5) 1px, transparent 0)", backgroundSize: "28px 28px" }} />
-      </motion.div>
+      {/* Parallax bg (desktop only) */}
+      {!isMobile && (
+        <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
+          <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(20,20,19,0.5) 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+        </motion.div>
+      )}
 
       {/* Header */}
       <div className="relative z-10 text-center space-y-3 mb-10">
@@ -542,7 +620,7 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
           ) : (
             <div className="space-y-6 md:space-y-10 relative z-10">
               {processedProblems.map((prob, i) => (
-                <JourneyNode key={prob.id} problem={prob} index={i} isPassed={prob.isPassed} isNext={prob.isNext} />
+                <JourneyNode key={prob.id} problem={prob} index={i} isPassed={prob.isPassed} isNext={prob.isNext} isMobile={isMobile} />
               ))}
             </div>
           )}
