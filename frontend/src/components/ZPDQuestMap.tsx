@@ -53,6 +53,86 @@ function assignModule(prob: Problem): string {
   return "b1000000-0000-4000-a000-000000000003";
 }
 
+// ─── Terrain Decorations (mountains, castles, trees, flags, campfires) ────────
+const TERRAIN_ELEMENTS = [
+  // Mountain
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 64 48" fill="none">
+      <path d="M4 44 L20 8 L28 22 L36 6 L52 44 Z" fill="rgba(71,85,105,0.08)" stroke="rgba(71,85,105,0.15)" strokeWidth="1.5" />
+      <path d="M20 8 L24 16 L16 16 Z" fill="rgba(255,255,255,0.3)" />
+      <path d="M36 6 L40 14 L32 14 Z" fill="rgba(255,255,255,0.3)" />
+      <circle cx="50" cy="10" r="4" fill="rgba(251,191,36,0.15)" />
+    </svg>
+  ),
+  // Castle
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 64 56" fill="none">
+      <rect x="16" y="20" width="32" height="28" fill="rgba(71,85,105,0.07)" stroke="rgba(71,85,105,0.12)" strokeWidth="1.2" rx="2" />
+      <rect x="12" y="12" width="8" height="36" fill="rgba(71,85,105,0.06)" stroke="rgba(71,85,105,0.12)" strokeWidth="1" rx="1" />
+      <rect x="44" y="12" width="8" height="36" fill="rgba(71,85,105,0.06)" stroke="rgba(71,85,105,0.12)" strokeWidth="1" rx="1" />
+      <rect x="12" y="8" width="3" height="4" fill="rgba(71,85,105,0.1)" />
+      <rect x="17" y="8" width="3" height="4" fill="rgba(71,85,105,0.1)" />
+      <rect x="44" y="8" width="3" height="4" fill="rgba(71,85,105,0.1)" />
+      <rect x="49" y="8" width="3" height="4" fill="rgba(71,85,105,0.1)" />
+      <path d="M28 48 L28 34 A4 4 0 0 1 36 34 L36 48" fill="rgba(71,85,105,0.05)" stroke="rgba(71,85,105,0.12)" strokeWidth="1" />
+      <path d="M30 12 L32 4 L34 12" fill="rgba(217,119,6,0.2)" stroke="rgba(217,119,6,0.4)" strokeWidth="0.8" />
+    </svg>
+  ),
+  // Pine trees
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 64 48" fill="none">
+      <path d="M14 44 L14 30 M14 38 L8 38 L14 28 L20 38 Z M14 32 L10 32 L14 24 L18 32 Z" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.2)" strokeWidth="1" />
+      <rect x="13" y="38" width="2" height="6" fill="rgba(120,80,40,0.15)" />
+      <path d="M38 44 L38 26 M38 38 L30 38 L38 24 L46 38 Z M38 30 L33 30 L38 20 L43 30 Z" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.18)" strokeWidth="1" />
+      <rect x="37" y="38" width="2" height="6" fill="rgba(120,80,40,0.12)" />
+      <circle cx="52" cy="38" r="5" fill="rgba(34,197,94,0.06)" stroke="rgba(34,197,94,0.12)" strokeWidth="1" />
+      <rect x="51" y="38" width="2" height="6" fill="rgba(120,80,40,0.1)" />
+    </svg>
+  ),
+  // Flag/checkpoint
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 48 56" fill="none">
+      <rect x="12" y="8" width="2" height="40" fill="rgba(71,85,105,0.12)" rx="1" />
+      <path d="M14 8 L40 14 L14 22 Z" fill="rgba(217,119,6,0.12)" stroke="rgba(217,119,6,0.25)" strokeWidth="1" />
+      <circle cx="12" cy="48" r="4" fill="rgba(71,85,105,0.05)" stroke="rgba(71,85,105,0.1)" strokeWidth="1" />
+      <path d="M30 36 C32 32, 38 32, 40 36 C42 40, 36 42, 34 40 C32 38, 28 40, 30 36 Z" fill="rgba(34,197,94,0.06)" stroke="rgba(34,197,94,0.1)" strokeWidth="0.8" />
+    </svg>
+  ),
+  // Campfire
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 48 48" fill="none">
+      <ellipse cx="24" cy="40" rx="12" ry="3" fill="rgba(71,85,105,0.06)" />
+      <path d="M18 40 L20 28 L24 32 L28 26 L30 40 Z" fill="rgba(217,119,6,0.08)" stroke="rgba(217,119,6,0.15)" strokeWidth="1" />
+      <path d="M22 40 L23 32 L25 34 L27 30 L28 40 Z" fill="rgba(251,191,36,0.12)" />
+      <circle cx="24" cy="28" r="2" fill="rgba(251,191,36,0.15)" />
+      <path d="M14 38 L16 36 L18 40 M30 40 L32 36 L34 38" stroke="rgba(120,80,40,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  // Bridge
+  ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 72 40" fill="none">
+      <path d="M4 32 Q18 16, 36 16 Q54 16, 68 32" fill="none" stroke="rgba(71,85,105,0.12)" strokeWidth="2" />
+      <path d="M4 32 Q18 20, 36 20 Q54 20, 68 32" fill="rgba(71,85,105,0.04)" stroke="rgba(71,85,105,0.08)" strokeWidth="1" />
+      <line x1="16" y1="24" x2="16" y2="32" stroke="rgba(71,85,105,0.1)" strokeWidth="1.5" />
+      <line x1="28" y1="18" x2="28" y2="28" stroke="rgba(71,85,105,0.1)" strokeWidth="1.5" />
+      <line x1="44" y1="18" x2="44" y2="28" stroke="rgba(71,85,105,0.1)" strokeWidth="1.5" />
+      <line x1="56" y1="24" x2="56" y2="32" stroke="rgba(71,85,105,0.1)" strokeWidth="1.5" />
+    </svg>
+  ),
+];
+
+function TerrainDecoration({ index }: { index: number }) {
+  const element = TERRAIN_ELEMENTS[index % TERRAIN_ELEMENTS.length];
+  const isEven = index % 2 === 0;
+  const Element = element;
+  return (
+    <div className={`hidden md:block absolute ${isEven ? "right-4 lg:right-12" : "left-[100px] lg:left-[120px]"} opacity-60 hover:opacity-90 transition-opacity`}
+      style={{ top: `${index * 140 + 70}px` }}>
+      <Element className="w-16 h-12 lg:w-20 lg:h-14" />
+    </div>
+  );
+}
+
 // ─── Static visual landmark per problem (no animations, used on mobile) ──────
 function StaticProblemVisual({ title }: { title: string }) {
   const t = title.toLowerCase();
@@ -299,13 +379,18 @@ const ProblemVisual = memo(function ProblemVisual({ title }: { title: string }) 
 })
 
 // ─── Single Journey Node ──────────────────────────────────────────────────────
-const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext, isMobile }: {
-  problem: Problem; index: number; isPassed: boolean; isNext: boolean; isMobile: boolean;
+const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext, isMobile, totalCount }: {
+  problem: Problem; index: number; isPassed: boolean; isNext: boolean; isMobile: boolean; totalCount: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const isEven = index % 2 === 0;
   const diffScore = problem.difficulty_score || 2.0;
+
+  const depthProgress = totalCount > 1 ? index / (totalCount - 1) : 0;
+  const scale3D = isMobile ? 1 : 1 - depthProgress * 0.06;
+  const translateZ = isMobile ? 0 : -depthProgress * 40;
+  const rotateY = isMobile ? 0 : (isEven ? -1.5 : 1.5) * (1 - depthProgress * 0.5);
 
   if (isMobile) {
     return (
@@ -361,12 +446,16 @@ const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext
       initial={{ opacity: 0, y: 30, x: isEven ? -20 : 20 }}
       animate={isInView ? { opacity: 1, y: 0, x: 0 } : {}}
       transition={{ duration: 0.6, delay: 0.05, ease: EASE }}
+      style={{
+        transform: `scale(${scale3D}) translateZ(${translateZ}px) rotateY(${rotateY}deg)`,
+        transformStyle: "preserve-3d",
+      }}
     >
       {/* Connector dot */}
       <div className="hidden md:flex absolute left-[46px] top-1/2 -translate-y-1/2 -translate-x-1/2 z-20">
         <div
-          className={`w-9 h-9 rounded-full border-[3px] flex items-center justify-center text-xs font-mono font-bold shadow-md ${
-            isPassed ? "bg-emerald-500 border-ivory-100 text-white" : isNext ? "bg-amber-500 border-slate-900 text-slate-900" : "bg-slate-200 border-slate-300 text-slate-500"
+          className={`w-9 h-9 rounded-full border-[3px] flex items-center justify-center text-xs font-mono font-bold ${
+            isPassed ? "bg-emerald-500 border-ivory-100 text-white shadow-lg shadow-emerald-500/30" : isNext ? "bg-amber-500 border-slate-900 text-slate-900 shadow-lg shadow-amber-500/30" : "bg-slate-200 border-slate-300 text-slate-500 shadow-md"
           }`}
         >
           {isPassed ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
@@ -376,9 +465,10 @@ const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext
       {/* Card */}
       <div className={`w-full md:w-[calc(50%-56px)] ${isEven ? "md:ml-[92px]" : "md:mr-[92px]"}`}>
         <div
-          className={`relative rounded-2xl p-4 sm:p-5 border-2 transition-all overflow-hidden hover:-translate-y-0.5 ${
-            isPassed ? "border-emerald-500/40 bg-emerald-50/30" : isNext ? "border-amber-500 bg-amber-50/40 shadow-lg shadow-amber-500/10" : "border-slate-200 bg-ivory-100 hover:border-slate-300"
+          className={`relative rounded-2xl p-4 sm:p-5 border-2 transition-all overflow-hidden hover:-translate-y-1 hover:shadow-xl ${
+            isPassed ? "border-emerald-500/40 bg-emerald-50/30 shadow-md shadow-emerald-500/5" : isNext ? "border-amber-500 bg-amber-50/40 shadow-xl shadow-amber-500/15" : "border-slate-200 bg-ivory-100 hover:border-slate-300 shadow-md shadow-slate-900/5"
           }`}
+          style={{ transformStyle: "preserve-3d" }}
         >
           {isNext && (
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
@@ -430,13 +520,13 @@ const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext
   );
 })
 
-// ─── Journey Path SVG (curvy snake path) ─────────────────────────────────────
+// ─── Journey Path SVG (3D curvy snake path) ──────────────────────────────────
 function JourneyPath({ count }: { count: number }) {
   if (count === 0) return null;
   const segH = 140;
   const totalHeight = count * segH;
   const midX = 46;
-  const amplitude = 24;
+  const amplitude = 26;
 
   let d = `M ${midX} 0`;
   for (let i = 0; i < count; i++) {
@@ -451,14 +541,24 @@ function JourneyPath({ count }: { count: number }) {
   return (
     <svg className="absolute left-0 top-0 w-[92px] h-full hidden md:block pointer-events-none" preserveAspectRatio="none" style={{ height: "100%" }}
       viewBox={`0 0 92 ${totalHeight}`}>
-      <path d={d} fill="none" stroke="rgba(20,20,19,0.07)" strokeWidth="2" strokeLinecap="round" />
-      <motion.path d={d} fill="none" stroke="url(#pg)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="8 6"
-        animate={{ strokeDashoffset: [0, -28] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} />
+      {/* Shadow/depth path */}
+      <path d={d} fill="none" stroke="rgba(217,119,6,0.08)" strokeWidth="8" strokeLinecap="round"
+        style={{ filter: "blur(4px)", transform: "translate(2px, 3px)" }} />
+      {/* Base track */}
+      <path d={d} fill="none" stroke="rgba(20,20,19,0.06)" strokeWidth="3" strokeLinecap="round" />
+      {/* Animated flowing path */}
+      <motion.path d={d} fill="none" stroke="url(#pg)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="10 8"
+        animate={{ strokeDashoffset: [0, -36] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} />
+      {/* Bright leading dot */}
+      <motion.circle r="4" fill="#f59e0b" opacity="0.7"
+        style={{ filter: "blur(1px)" }}>
+        <animateMotion dur="6s" repeatCount="indefinite" path={d} />
+      </motion.circle>
       <defs>
         <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d97706" stopOpacity="0.7" />
-          <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#d97706" stopOpacity="0.15" />
+          <stop offset="0%" stopColor="#d97706" stopOpacity="0.8" />
+          <stop offset="40%" stopColor="#f59e0b" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#d97706" stopOpacity="0.2" />
         </linearGradient>
       </defs>
     </svg>
@@ -512,11 +612,16 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
 
   return (
     <section ref={containerRef} className="relative rounded-3xl border border-slate-900/10 bg-gradient-to-b from-ivory-100 via-ivory-200/30 to-ivory-100 overflow-hidden py-10 px-4 sm:px-8">
-      {/* Parallax bg (desktop only) */}
+      {/* 3D ground plane effect */}
       {!isMobile && (
-        <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
-          <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(20,20,19,0.5) 1px, transparent 0)", backgroundSize: "28px 28px" }} />
-        </motion.div>
+        <>
+          <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
+            <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(20,20,19,0.5) 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+          </motion.div>
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: "linear-gradient(180deg, transparent 0%, rgba(217,119,6,0.02) 50%, rgba(217,119,6,0.04) 100%)",
+          }} />
+        </>
       )}
 
       {/* Header */}
@@ -607,45 +712,80 @@ export const ZPDQuestMap: React.FC<ZPDQuestMapProps> = ({
         </div>
       </div>
 
-      {/* Animated module content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeModuleIdx}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.4, ease: EASE }}
-          className="relative max-w-4xl mx-auto"
-        >
-          <JourneyPath count={processedProblems.length} />
+      {/* Animated module content with 3D perspective */}
+      <div className={isMobile ? "" : "relative"} style={isMobile ? {} : { perspective: "1200px", perspectiveOrigin: "50% 30%" }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeModuleIdx}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="relative max-w-4xl mx-auto"
+            style={isMobile ? {} : { transformStyle: "preserve-3d", rotateX: "2deg" }}
+          >
+            <JourneyPath count={processedProblems.length} />
 
-          {processedProblems.length === 0 ? (
-            <div className="text-center py-16 space-y-3">
-              <Lock className="w-8 h-8 text-slate-400 mx-auto" />
-              <p className="text-sm text-slate-500">No problems in this module yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-6 md:space-y-10 relative z-10">
-              {processedProblems.map((prob, i) => (
-                <JourneyNode key={prob.id} problem={prob} index={i} isPassed={prob.isPassed} isNext={prob.isNext} isMobile={isMobile} />
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            {processedProblems.length === 0 ? (
+              <div className="text-center py-16 space-y-3">
+                <Lock className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-sm text-slate-500">No problems in this module yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-6 md:space-y-10 relative z-10">
+                {/* Start banner — links to first unsolved problem */}
+                {!isMobile && processedProblems.length > 0 && (
+                  <div className="flex items-center justify-center mb-4">
+                    <Link
+                      href={`/problems/${(processedProblems.find(p => p.isNext) || processedProblems[0]).id}`}
+                      className="flex items-center space-x-2 px-5 py-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer group"
+                    >
+                      <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 4 L5 20 M5 4 L19 12 L5 20" fill="rgba(34,197,94,0.2)" stroke="rgba(34,197,94,0.6)" strokeWidth="1.5" strokeLinejoin="round" />
+                      </svg>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700 uppercase tracking-wider group-hover:text-emerald-900 transition-colors">Begin Quest</span>
+                    </Link>
+                  </div>
+                )}
+                {/* Terrain decorations */}
+                {!isMobile && processedProblems.map((_, i) => (
+                  <TerrainDecoration key={`terrain-${i}`} index={i} />
+                ))}
+                {processedProblems.map((prob, i) => (
+                  <JourneyNode key={prob.id} problem={prob} index={i} isPassed={prob.isPassed} isNext={prob.isNext} isMobile={isMobile} totalCount={processedProblems.length} />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-      {/* Finish */}
-      <motion.div className="relative z-10 text-center mt-10 pt-6 border-t border-slate-900/5"
+      {/* Finish — destination castle */}
+      <motion.div className="relative z-10 text-center mt-10 pt-8"
         initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE }}>
-        <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-900/5 border border-slate-900/10">
-          <Trophy className="w-4 h-4 text-amber-600" />
-          <span className="text-xs font-mono text-slate-600">
-            {completedInModule === totalInModule && totalInModule > 0
-              ? activeModuleIdx < resolvedModules.length - 1
-                ? "Module complete! Move to the next one."
-                : "All modules mastered!"
-              : "Keep going — one step at a time"}
-          </span>
+        <div className="flex flex-col items-center space-y-3">
+          <svg className="w-20 h-16 opacity-70" viewBox="0 0 80 64" fill="none">
+            <rect x="20" y="24" width="40" height="32" fill="rgba(71,85,105,0.08)" stroke="rgba(71,85,105,0.15)" strokeWidth="1.5" rx="2" />
+            <rect x="14" y="16" width="10" height="40" fill="rgba(71,85,105,0.06)" stroke="rgba(71,85,105,0.12)" strokeWidth="1.2" rx="1" />
+            <rect x="56" y="16" width="10" height="40" fill="rgba(71,85,105,0.06)" stroke="rgba(71,85,105,0.12)" strokeWidth="1.2" rx="1" />
+            <rect x="14" y="10" width="4" height="6" fill="rgba(71,85,105,0.12)" />
+            <rect x="20" y="10" width="4" height="6" fill="rgba(71,85,105,0.12)" />
+            <rect x="56" y="10" width="4" height="6" fill="rgba(71,85,105,0.12)" />
+            <rect x="62" y="10" width="4" height="6" fill="rgba(71,85,105,0.12)" />
+            <path d="M34 56 L34 40 A6 6 0 0 1 46 40 L46 56" fill="rgba(71,85,105,0.04)" stroke="rgba(71,85,105,0.12)" strokeWidth="1.2" />
+            <path d="M37 16 L40 4 L43 16" fill="rgba(217,119,6,0.25)" stroke="rgba(217,119,6,0.5)" strokeWidth="1" />
+            <circle cx="40" cy="4" r="2" fill="rgba(251,191,36,0.4)" />
+          </svg>
+          <div className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-slate-900/5 to-amber-500/5 border border-slate-900/10 shadow-sm">
+            <Trophy className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-mono text-slate-600 font-semibold">
+              {completedInModule === totalInModule && totalInModule > 0
+                ? activeModuleIdx < resolvedModules.length - 1
+                  ? "Module conquered! Advance to the next realm."
+                  : "All realms mastered — you are the champion!"
+                : "The castle awaits — keep conquering challenges"}
+            </span>
+          </div>
         </div>
       </motion.div>
     </section>
