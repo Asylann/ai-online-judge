@@ -430,27 +430,34 @@ const JourneyNode = memo(function JourneyNode({ problem, index, isPassed, isNext
   );
 })
 
-// ─── Journey Path SVG ─────────────────────────────────────────────────────────
+// ─── Journey Path SVG (curvy snake path) ─────────────────────────────────────
 function JourneyPath({ count }: { count: number }) {
   if (count === 0) return null;
   const segH = 140;
   const totalHeight = count * segH;
+  const midX = 46;
+  const amplitude = 24;
 
-  let d = "M 46 0";
+  let d = `M ${midX} 0`;
   for (let i = 0; i < count; i++) {
-    const y = i * segH + segH / 2;
-    d += ` L 46 ${y}`;
+    const startY = i * segH;
+    const endY = startY + segH;
+    const midY = startY + segH / 2;
+    const direction = i % 2 === 0 ? 1 : -1;
+    const cx = midX + amplitude * direction;
+    d += ` Q ${cx} ${midY} ${midX} ${endY}`;
   }
 
   return (
     <svg className="absolute left-0 top-0 w-[92px] h-full hidden md:block pointer-events-none" preserveAspectRatio="none" style={{ height: "100%" }}
       viewBox={`0 0 92 ${totalHeight}`}>
       <path d={d} fill="none" stroke="rgba(20,20,19,0.07)" strokeWidth="2" strokeLinecap="round" />
-      <motion.path d={d} fill="none" stroke="url(#pg)" strokeWidth="2" strokeLinecap="round" strokeDasharray="6 5"
-        animate={{ strokeDashoffset: [0, -22] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
+      <motion.path d={d} fill="none" stroke="url(#pg)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="8 6"
+        animate={{ strokeDashoffset: [0, -28] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} />
       <defs>
         <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d97706" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="#d97706" stopOpacity="0.7" />
+          <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#d97706" stopOpacity="0.15" />
         </linearGradient>
       </defs>

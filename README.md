@@ -103,3 +103,7 @@ Before launching the cluster, you must populate `.env` with secure secrets and y
 1. Generate secure 256-bit randomized strings for `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, and `JWT_SECRET`.
 2. Provide your OpenAI API Key under `OPENAI_API_KEY`.
 3. Configure `SERVER_HOST`, `SERVER_USER`, and `SSH_PRIVATE_KEY` inside your GitHub repository secrets for the deployment workflow.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
