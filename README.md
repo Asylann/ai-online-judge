@@ -2,7 +2,7 @@
 
 An advanced, production-grade competitive programming and AI-guided eda Mining (EDM).
 
-### You can visit here: <a>https://aioj.studio</a>
+### You can visit here: <a>https://aio
 
 
 ---
