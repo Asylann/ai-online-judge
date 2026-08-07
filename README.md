@@ -9,7 +9,7 @@ An advanced, production-grade competitive programming and AI-guided eda Mining (
 
 ## Executive Summary
 
-The AI Online Judge is a high-concurrency, full-stack programming assessment platform engineered to demonstrate the union of secure sandboxed execution, asynchronous microservices, and adaptive artificial intelligence. Unlike traditional online judges that record merely binary pass/fail outcomes, this platform captures deep, multi-dimensional Educational Data Mining (EDM) metrics to quantify student cognitive effort, identify structural logic deviations via Abstract Syntax Trees (ASTs), and dynamically scaffold learning paths.
+The AI Online Judge is a high-concurrency, full-stack programming assessment platform engineered to demonstrate the union of secure sandboxed execution, asynchronous microservices, and adaptive artificimetrics to quantify student cognitive effort, identify structural logic deviations via Abstract Syntax Trees (ASTs), and dynamically scaffold learning paths.
 
 The architecture strictly decouples high-throughput REST API traffic from resource-intensive compilation and AI pipelines using RabbitMQ choreography and Redis Pub/Sub bridges, delivering real-time, zero-latency feedback directly to the student's browser editor via dedicated WebSocket hubs.
 
