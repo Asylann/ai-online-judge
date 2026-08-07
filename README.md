@@ -1,6 +1,6 @@
 # AI Online Judge — Polyglot Asynchronous Microservices Platform
 
-An advanced, production-grade competitive programming and AI-guided educational evaluation platform built inside a Polyglot Monorepo using Asynchronous Choreography, Real-Time WebSockets, and Educational Data Mining (EDM).
+An advanced, production-grade competitive programming and AI-guided eda Mining (EDM).
 
 ### You can visit here: <a>https://aioj.studio</a>
 
@@ -17,7 +17,7 @@ The architecture strictly decouples high-throughput REST API traffic from resour
 
 ## Project Motivation & Research Inspiration
 
-This platform was developed as an independent project inspired by the Smart Learning and Society 5.0 research methodologies pioneered by Professor Yutaka Watanobe’s Laboratory at the University of Aizu, Japan (creators of the Aizu Online Judge). It is built as a proof-of-concept to demonstrate advanced technical capabilities and pedagogical alignment for future presentation and potential academic acceptance.
+This pltory at the University of Aizu, Japan (creators of the Aizu Online Judge). It is built as a proof-of-concept to demonstrate advanced technical capabilities and pedagogical alignment for future presentation and potential academic acceptance.
 
 Key pedagogical and architectural implementations inspired by this research include:
 * **Observer & Launcher/Executor Architecture:** Code execution is strictly isolated using dedicated launcher daemons inside Linux sandboxes (isolate), monitored continuously by observer watchdogs that terminate runaway processes (SIGKILL).
@@ -36,7 +36,7 @@ The platform implements an Asynchronous Choreography Pattern inside a unified Po
 
 | Microservice | Language / Framework | Primary Responsibility |
 | :--- | :--- | :--- |
-| `api-gateway` | Go (Gin) | Central REST gateway, JWT authentication, rate limiting, and AMQP producer. |
+api-gateway | Go (Gin) | Central REST gateway, JWT authentication, rate limiting, and AMQP producer. |
 | `judge-worker` | Go (AMQP) | Asynchronous queue consumer, Base64 decoding, native execution, and verdict persistence. |
 | `ast-service` | Go (gotreesitter) | Microsecond AST parsing, structural complexity calculation, and error deviation scoring. |
 | `ai-tutor` | Python (FastAPI) | Virtual TA pedagogical engine utilizing OpenAI GPT-4o-mini with strict Socratic system prompts. |
