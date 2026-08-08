@@ -8,13 +8,12 @@ and updating Educational Data Mining (EDM) metrics like `cognitive_effort_index`
 import json
 import logging
 from typing import Any, Dict, Optional
-from app.db.database import get_pg_pool
+from app.dbdatabase import get_pg_pool
 
 logger = logging.getLogger("ai-tutor.repo")
 
 
 class SubmissionRepository:
-    """
     Data access layer for submissions and problems in PostgreSQL.
     Aligns with Watanobe lab research on effort-based metrics and Socratic tutoring logs.
     """
@@ -28,7 +27,7 @@ class SubmissionRepository:
         query = """
             SELECT 
                 s.id AS submission_id,
-                s.user_id,
+                s.userid,
                 s.problem_id,
                 s.code_base64,
                 s.language,

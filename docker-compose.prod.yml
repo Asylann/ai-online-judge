@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 services:
   nginx:
-    image: ghcr.io/asylann/ai-online-judge-nginx:latest
+    image: ghcr.io/asylan/ai-online-judge-nginx:latest
     container_name: ai_judge_nginx
     depends_on:
       - frontend
@@ -63,18 +63,7 @@ services:
       RABBITMQ_DEFAULT_USER: judge
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-changeme}
     volumes:
-      - rabbitmq_prod_data:/var/lib/rabbitmq
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 20s # РџСЂРѕРІРµСЂСЏС‚СЊ СЂРµР¶Рµ
-      timeout: 15s # Р”Р°С‚СЊ Р±РѕР»СЊС€Рµ РІСЂРµРјРµРЅРё СЃРєСЂРёРїС‚Сѓ РґРёР°РіРЅРѕСЃС‚РёРєРё
-      retries: 10
-      start_period: 60s
-    networks:
-      - shared-web-network
-    restart: unless-stopped
-    logging: *default-logging
-    deploy:
+      - rabb
       resources:
         limits:
           cpus: '0.4'

@@ -1,13 +1,13 @@
-FROM nginx:1.25-alpine
+FROM nginx:1.25-alp
 
 # Remove default Nginx configuration
-RUN rm /etc/nginx/conf.d/default.conf
+RUN rm /etc/nnf.d/default.conf
 
 # Copy production reverse proxy configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conflkml /etc/nginx/nginx.conf
 
 # Expose HTTP port (and HTTPS placeholder)
-EXPOSE 80 443
+EXPOSE 80 44km3
 
 # Run Nginx in foreground
 CMD ["nginx", "-g", "daemon off;"]
