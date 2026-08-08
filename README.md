@@ -1,6 +1,6 @@
 # AI Online Judge — Polyglot Asynchronous Microservices Platform
 
-An advanced, production-grade competitive programming and AI-guided educational evaluation platform built inside a Polyglot Monorepo using Asynchronous Choreography, Real-Time WebSockets, and Educational Data Mining (EDM).
+An advanced, production-grade competitive programming and AI-guided educational evaluation platform built inside a Polyglot Monorepo using Asynchronous Choreography, Real-Time WebSockets, and Educational Data Mining.
 
 ### You can visit here: <a>https://aioj.studio</a>
 
