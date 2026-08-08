@@ -10,14 +10,12 @@ services:
   nginx:
     image: ghcr.io/asylann/ai-online-judge-nginx:latest
     container_name: ai_judge_nginx
-    ports:
-      - "80:80"
     depends_on:
       - frontend
       - api-gateway
       - websocket-service
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -38,7 +36,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -54,7 +52,7 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -68,12 +66,12 @@ services:
       - rabbitmq_prod_data:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 20s # Проверять реже
-      timeout: 15s # Дать больше времени скрипту диагностики
+      interval: 20s # РџСЂРѕРІРµСЂСЏС‚СЊ СЂРµР¶Рµ
+      timeout: 15s # Р”Р°С‚СЊ Р±РѕР»СЊС€Рµ РІСЂРµРјРµРЅРё СЃРєСЂРёРїС‚Сѓ РґРёР°РіРЅРѕСЃС‚РёРєРё
       retries: 10
       start_period: 60s
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
     deploy:
@@ -86,8 +84,8 @@ services:
     container_name: ai_judge_api_gateway
     environment:
       PORT: "8080"
-      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
-      RABBITMQ_URL: amqp://judge:${RABBITMQ_PASSWORD:-changeme}@rabbitmq:5672/
+      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@ai_judge_postgres:5432/aionlinejudge?sslmode=disable
+      RABBITMQ_URL: amqp://judge:${RABBITMQ_PASSWORD:-changeme}@ai_judge_rabbitmq:5672/
       JWT_SECRET: ${JWT_SECRET:-supersecretjwtkeyforonlinejudgedev}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -100,7 +98,7 @@ services:
       rabbitmq:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -108,11 +106,11 @@ services:
     image: ghcr.io/asylann/ai-online-judge-judge-worker:latest
     container_name: ai_judge_worker
     environment:
-      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
-      RABBITMQ_URL: amqp://judge:${RABBITMQ_PASSWORD:-changeme}@rabbitmq:5672/
-      REDIS_URL: redis:6379
+      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@ai_judge_postgres:5432/aionlinejudge?sslmode=disable
+      RABBITMQ_URL: amqp://judge:${RABBITMQ_PASSWORD:-changeme}@ai_judge_rabbitmq:5672/
+      REDIS_URL: ai_judge_redis:6379
       JUDGE0_URL: ${JUDGE0_URL:-https://ce.judge0.com}
-      AST_SERVICE_URL: http://ast-service:8083
+      AST_SERVICE_URL: http://ai_judge_ast_service:8083
     depends_on:
       postgres:
         condition: service_healthy
@@ -120,10 +118,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -132,13 +128,13 @@ services:
     container_name: ai_judge_ast_service
     environment:
       PORT: "8083"
-      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge?sslmode=disable
-      AI_TUTOR_URL: http://ai-tutor:8000
+      DATABASE_URL: postgres://judge:${POSTGRES_PASSWORD:-changeme}@ai_judge_postgres:5432/aionlinejudge?sslmode=disable
+      AI_TUTOR_URL: http://ai_judge_ai_tutor:8000
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -147,8 +143,8 @@ services:
     container_name: ai_judge_ai_tutor
     environment:
       PORT: "8000"
-      DATABASE_URL: postgresql://judge:${POSTGRES_PASSWORD:-changeme}@postgres:5432/aionlinejudge
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://judge:${POSTGRES_PASSWORD:-changeme}@ai_judge_postgres:5432/aionlinejudge
+      REDIS_URL: redis://ai_judge_redis:6379/0
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder-for-testing}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
     depends_on:
@@ -157,7 +153,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -166,13 +162,13 @@ services:
     container_name: ai_judge_websocket_service
     environment:
       PORT: "8082"
-      REDIS_URL: redis:6379
+      REDIS_URL: ai_judge_redis:6379
       JWT_SECRET: ${JWT_SECRET:-supersecretjwtkeyforonlinejudgedev}
     depends_on:
       redis:
         condition: service_healthy
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
@@ -187,15 +183,18 @@ services:
       - api-gateway
       - websocket-service
     networks:
-      - ai-judge-network
+      - shared-web-network
     restart: unless-stopped
     logging: *default-logging
 
 networks:
-  ai-judge-network:
-    driver: bridge
+  shared-web-network:
+    external: true
 
 volumes:
   postgres_prod_data:
   redis_prod_data:
   rabbitmq_prod_data:
+
+
+

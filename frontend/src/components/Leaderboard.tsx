@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Trophy, Award, Medal, Crown, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -16,6 +17,7 @@ export const Leaderboard: React.FC = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -37,9 +39,10 @@ export const Leaderboard: React.FC = () => {
     };
 
     fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, 15000);
+    const pollInterval = isMobile ? 60000 : 15000;
+    const interval = setInterval(fetchLeaderboard, pollInterval);
     return () => clearInterval(interval);
-  }, []);
+  }, [isMobile]);
 
   // Separate Top 3 for the Sports Podium vs Ranks 4-10 for the List
   const topTen = entries.slice(0, 10);
@@ -61,7 +64,7 @@ export const Leaderboard: React.FC = () => {
           </h3>
         </div>
         <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-ivory-200 border border-slate-900/10">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
           <span className="text-xs font-mono font-bold text-slate-700">Live ZRANGE Updates</span>
         </div>
       </div>
@@ -132,7 +135,7 @@ export const Leaderboard: React.FC = () => {
                   className="w-full flex flex-col items-center"
                 >
                   <div className="mb-3 flex flex-col items-center text-center">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-400 border-2 border-amber-300 flex items-center justify-center text-slate-950 font-serif font-black text-xl shadow-lg mb-2 relative group animate-bounce duration-1000">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-400 border-2 border-amber-300 flex items-center justify-center text-slate-950 font-serif font-black text-xl shadow-lg mb-2 relative group">
                       <span>1st</span>
                       <Crown className="w-5 h-5 text-amber-900 absolute -top-2.5 bg-amber-300 rounded-full p-0.5 shadow-sm" />
                     </div>

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import dynamic from "next/dynamic";
 import type { SubmissionMetric } from "@/components/EffortDashboard";
 
@@ -11,7 +12,8 @@ const Leaderboard = dynamic(() => import("@/components/Leaderboard").then(mod =>
 const ChallengeOfTheDay = dynamic(() => import("@/components/ChallengeOfTheDay").then(mod => mod.ChallengeOfTheDay), { ssr: false });
 const HeroVisual = dynamic(() => import("@/components/HeroVisual").then(mod => mod.HeroVisual), { ssr: false });
 const ZPDQuestMap = dynamic(() => import("@/components/ZPDQuestMap").then(mod => mod.ZPDQuestMap), { ssr: false });
-import { ArrowUpRight, Activity, Code, Award, Search, Filter } from "lucide-react";
+
+import { ArrowUpRight, Activity, Code, Award, Search, Filter, Sparkles } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -24,133 +26,36 @@ interface Problem {
   test_cases?: any[];
 }
 
+const EASE = [0.16, 1, 0.3, 1];
+
 const HERO_TEXT = "AI-Powered Online Judge with Socratic Virtual TA.";
 const HERO_SUBTEXT = "Forge your path to mastery through battle-tested sandboxed execution and a hyper-intelligent AI that dynamically adapts to your every move.";
 
-// Staggered word animation helper for the Anthropic hero reveal
 const containerVariants = {
   hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
+  visible: { transition: { staggerChildren: 0.06 } },
 };
 
 const wordVariants = {
-  hidden: {
-    opacity: 0,
-    y: 24,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
 };
 
 const mockProblems: Problem[] = [
-  {
-    id: "a0000000-0000-4000-a000-000000000001",
-    title: "Two Sum — Optimal Structural Indexing",
-    description: "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. Demonstrate optimal O(N) hash mapping.\n\n### Example 1:\n**Input:**\n4 9\n2 7 11 15\n**Output:**\n0 1",
-    difficulty_score: 1.2,
-    difficulty: "easy",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000002",
-    title: "Reverse Integer — AST Loop Invariants",
-    description: "Given a signed 32-bit integer `x`, return `x` with its digits reversed. If reversing `x` causes the value to go outside the signed 32-bit integer range [-2^31, 2^31 - 1], then return 0.\n\n### Example 1:\n**Input:**\n123\n**Output:**\n321",
-    difficulty_score: 1.5,
-    difficulty: "easy",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000003",
-    title: "Valid Parentheses — Monotonic Stack",
-    description: "Given a string `s` containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid using stack invariants.\n\n### Example 1:\n**Input:**\n()[]{}\n**Output:**\ntrue",
-    difficulty_score: 1.8,
-    difficulty: "easy",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000004",
-    title: "Merge Two Sorted Lists — Structural Pointers",
-    description: "You are given the heads of two sorted linked lists `list1` and `list2`. Merge the two lists into one sorted list. The list should be made by splicing together the nodes of the first two lists.\n\n### Example 1:\n**Input:**\n3\n1 2 4\n3\n1 3 4\n**Output:**\n1 1 2 3 4 4",
-    difficulty_score: 2.0,
-    difficulty: "easy",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000005",
-    title: "Balanced BST Verification — AST Recursion Depth",
-    description: "Verify if a binary tree (represented in level-order traversal format) is height-balanced. A height-balanced binary tree is one in which the depth of the two subtrees of every node never differs by more than one.\n\n### Example 1:\n**Input:**\n3 9 20 -1 -1 15 7\n**Output:**\ntrue",
-    difficulty_score: 2.3,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000006",
-    title: "Longest Substring Without Repeating Characters",
-    description: "Given a string `s`, find the length of the longest substring without repeating characters using the sliding window structural pattern.\n\n### Example 1:\n**Input:**\nabcabcbb\n**Output:**\n3",
-    difficulty_score: 2.6,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000007",
-    title: "Group Anagrams — Structural Hash Mapping",
-    description: "Given an array of strings, group the anagrams together. You can output the groups sorted lexicographically.\n\n### Example 1:\n**Input:**\neat tea tan ate nat bat\n**Output:**\nbat\nnat tan\nate eat tea",
-    difficulty_score: 2.9,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000008",
-    title: "Coin Change — Dynamic Programming Bottom-Up",
-    description: "You are given an integer array `coins` representing coins of different denominations and an integer `amount` representing a total amount of money. Return the fewest number of coins that you need to make up that amount.\n\n### Example 1:\n**Input:**\n1 2 5\n11\n**Output:**\n3",
-    difficulty_score: 3.2,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000009",
-    title: "0/1 Knapsack Optimization — ZPD Challenge",
-    description: "Solve the 0/1 knapsack optimization problem within minimal memory constraints. Given `N` items with weights and values, find the maximum value you can pack into a knapsack of capacity `W`.\n\n### Example 1:\n**Input:**\n3 50\n10 60\n20 100\n30 120\n**Output:**\n220",
-    difficulty_score: 3.5,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000010",
-    title: "Course Schedule — Topological Sort (Kahn's Algorithm)",
-    description: "There are `numCourses` courses you have to take. Given the total number of courses and a list of prerequisite pairs `[a, b]`, return `true` if it is possible to finish all courses, or `false` otherwise (detect cycle).\n\n### Example 1:\n**Input:**\n2 1\n1 0\n**Output:**\ntrue",
-    difficulty_score: 3.8,
-    difficulty: "medium",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000011",
-    title: "Merge K Sorted Lists — Priority Queue / Divide & Conquer",
-    description: "You are given `k` linked-lists, each sorted in ascending order. Merge all the linked-lists into one sorted linked-list and return it. Evaluate runtime heap operations inside the sandboxed container.\n\n### Example 1:\n**Input:**\n3\n1 4 5\n1 3 4\n2 6\n**Output:**\n1 1 2 3 4 4 5 6",
-    difficulty_score: 4.1,
-    difficulty: "hard",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000012",
-    title: "Trapping Rain Water — Two Pointer Monotonic Stack",
-    description: "Given `n` non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.\n\n### Example 1:\n**Input:**\n0 1 0 2 1 0 1 3 2 1 2 1\n**Output:**\n6",
-    difficulty_score: 4.4,
-    difficulty: "hard",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000013",
-    title: "N-Queens — Backtracking with Bitwise Optimization",
-    description: "The N-Queens puzzle is the problem of placing `N` chess queens on an `N x N` chessboard such that no two queens attack each other. Given `N`, return the number of distinct solutions.\n\n### Example 1:\n**Input:**\n4\n**Output:**\n2",
-    difficulty_score: 4.8,
-    difficulty: "hard",
-  },
-  {
-    id: "a0000000-0000-4000-a000-000000000014",
-    title: "Alien Dictionary — Graph Topological Ordering",
-    description: "There is a new alien language that uses the Latin alphabet. Derive the order of letters in this language from a sorted list of alien words.\n\n### Example 1:\n**Input:**\nwrt wrf er ett rftt\n**Output:**\nwertf",
-    difficulty_score: 5.2,
-    difficulty: "hard",
-  },
+  { id: "a0000000-0000-4000-a000-000000000001", title: "Two Sum — Optimal Structural Indexing", description: "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. Demonstrate optimal O(N) hash mapping.\n\n### Example 1:\n**Input:**\n4 9\n2 7 11 15\n**Output:**\n0 1", difficulty_score: 1.2, difficulty: "easy" },
+  { id: "a0000000-0000-4000-a000-000000000002", title: "Reverse Integer — AST Loop Invariants", description: "Given a signed 32-bit integer `x`, return `x` with its digits reversed. If reversing `x` causes the value to go outside the signed 32-bit integer range [-2^31, 2^31 - 1], then return 0.\n\n### Example 1:\n**Input:**\n123\n**Output:**\n321", difficulty_score: 1.5, difficulty: "easy" },
+  { id: "a0000000-0000-4000-a000-000000000003", title: "Valid Parentheses — Monotonic Stack", description: "Given a string `s` containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid using stack invariants.\n\n### Example 1:\n**Input:**\n()[]{}\n**Output:**\ntrue", difficulty_score: 1.8, difficulty: "easy" },
+  { id: "a0000000-0000-4000-a000-000000000004", title: "Merge Two Sorted Lists — Structural Pointers", description: "You are given the heads of two sorted linked lists `list1` and `list2`. Merge the two lists into one sorted list. The list should be made by splicing together the nodes of the first two lists.\n\n### Example 1:\n**Input:**\n3\n1 2 4\n3\n1 3 4\n**Output:**\n1 1 2 3 4 4", difficulty_score: 2.0, difficulty: "easy" },
+  { id: "a0000000-0000-4000-a000-000000000005", title: "Balanced BST Verification — AST Recursion Depth", description: "Verify if a binary tree (represented in level-order traversal format) is height-balanced.\n\n### Example 1:\n**Input:**\n3 9 20 -1 -1 15 7\n**Output:**\ntrue", difficulty_score: 2.3, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000006", title: "Longest Substring Without Repeating Characters", description: "Given a string `s`, find the length of the longest substring without repeating characters using the sliding window structural pattern.\n\n### Example 1:\n**Input:**\nabcabcbb\n**Output:**\n3", difficulty_score: 2.6, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000007", title: "Group Anagrams — Structural Hash Mapping", description: "Given an array of strings, group the anagrams together.\n\n### Example 1:\n**Input:**\neat tea tan ate nat bat\n**Output:**\nbat\nnat tan\nate eat tea", difficulty_score: 2.9, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000008", title: "Coin Change — Dynamic Programming Bottom-Up", description: "You are given an integer array `coins` representing coins of different denominations and an integer `amount`. Return the fewest number of coins needed.\n\n### Example 1:\n**Input:**\n1 2 5\n11\n**Output:**\n3", difficulty_score: 3.2, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000009", title: "0/1 Knapsack Optimization — ZPD Challenge", description: "Solve the 0/1 knapsack optimization problem. Given `N` items with weights and values, find the maximum value for capacity `W`.\n\n### Example 1:\n**Input:**\n3 50\n10 60\n20 100\n30 120\n**Output:**\n220", difficulty_score: 3.5, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000010", title: "Course Schedule — Topological Sort (Kahn's Algorithm)", description: "Given the total number of courses and prerequisite pairs, return `true` if it is possible to finish all courses.\n\n### Example 1:\n**Input:**\n2 1\n1 0\n**Output:**\ntrue", difficulty_score: 3.8, difficulty: "medium" },
+  { id: "a0000000-0000-4000-a000-000000000011", title: "Merge K Sorted Lists — Priority Queue / Divide & Conquer", description: "Merge `k` sorted linked-lists into one sorted linked-list.\n\n### Example 1:\n**Input:**\n3\n1 4 5\n1 3 4\n2 6\n**Output:**\n1 1 2 3 4 4 5 6", difficulty_score: 4.1, difficulty: "hard" },
+  { id: "a0000000-0000-4000-a000-000000000012", title: "Trapping Rain Water — Two Pointer Monotonic Stack", description: "Given `n` non-negative integers representing an elevation map, compute how much water it can trap.\n\n### Example 1:\n**Input:**\n0 1 0 2 1 0 1 3 2 1 2 1\n**Output:**\n6", difficulty_score: 4.4, difficulty: "hard" },
+  { id: "a0000000-0000-4000-a000-000000000013", title: "N-Queens — Backtracking with Bitwise Optimization", description: "Place `N` chess queens on an `N x N` board such that no two queens attack each other. Return the number of solutions.\n\n### Example 1:\n**Input:**\n4\n**Output:**\n2", difficulty_score: 4.8, difficulty: "hard" },
+  { id: "a0000000-0000-4000-a000-000000000014", title: "Alien Dictionary — Graph Topological Ordering", description: "Derive the order of letters in an alien language from a sorted list of words.\n\n### Example 1:\n**Input:**\nwrt wrf er ett rftt\n**Output:**\nwertf", difficulty_score: 5.2, difficulty: "hard" },
 ];
 
 const sampleBaselineMetrics: SubmissionMetric[] = [
@@ -160,8 +65,101 @@ const sampleBaselineMetrics: SubmissionMetric[] = [
   { attempt: 4, cognitive_effort_index: 4.80, execution_time_ms: 15, ast_complexity_score: 1.2, status: "Accepted" },
 ];
 
+// ─── SCROLL ANIMATION #1: Value Proposition Reveal ───────────────────────────
+function ValueProposition() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const isMobile = useIsMobile();
+
+  const cards = [
+    { title: "Submit your code", desc: "Write in any language. We handle the rest.", icon: <Code className="w-6 h-6" /> },
+    { title: "Instant AI feedback", desc: "Get hints, not answers. Learn by doing.", icon: <Sparkles className="w-6 h-6" /> },
+    { title: "Track your growth", desc: "See exactly how you're improving over time.", icon: <Activity className="w-6 h-6" /> },
+  ];
+
+  if (isMobile) {
+    return (
+      <section ref={ref} className="relative py-8">
+        <div className="text-center space-y-4 mb-10">
+          <h2 className="text-3xl font-serif font-medium text-slate-900 tracking-tight">
+            Practice smarter. <span className="text-slate-400">Not harder.</span>
+          </h2>
+          <p className="text-base text-slate-500 max-w-lg mx-auto">
+            An AI tutor that watches your code, understands your mistakes, and guides you to the solution — without spoiling it.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {cards.map((card) => (
+            <div key={card.title} className="relative group bg-ivory-100 rounded-2xl border border-slate-900/10 p-6 overflow-hidden">
+              <div className="space-y-3">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900/5 text-slate-700">
+                  {card.icon}
+                </div>
+                <h3 className="text-lg font-serif font-semibold text-slate-900 tracking-tight">{card.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{card.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section ref={ref} className="relative py-12">
+      <div className="text-center space-y-4 mb-14">
+        <motion.h2
+          className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium text-slate-900 tracking-tight"
+          initial={{ opacity: 0, y: 50 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, ease: EASE }}
+        >
+          Practice smarter.{" "}
+          <span className="text-slate-400">Not harder.</span>
+        </motion.h2>
+        <motion.p
+          className="text-base sm:text-lg text-slate-500 max-w-lg mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
+        >
+          An AI tutor that watches your code, understands your mistakes, and guides you to the solution — without spoiling it.
+        </motion.p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {cards.map((card, i) => (
+          <motion.div
+            key={card.title}
+            className="relative group bg-ivory-100 rounded-2xl border border-slate-900/10 p-8 overflow-hidden hover:border-slate-900/25 transition-colors duration-300"
+            initial={{ opacity: 0, y: 60, scale: 0.95 }}
+            animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+            transition={{ duration: 0.7, delay: 0.2 + i * 0.15, ease: EASE }}
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="space-y-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900/5 text-slate-700 group-hover:text-amber-700 group-hover:bg-amber-500/10 transition-colors duration-300">
+                {card.icon}
+              </div>
+              <h3 className="text-xl font-serif font-semibold text-slate-900 tracking-tight">
+                {card.title}
+              </h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {card.desc}
+              </p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+// ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, authReady } = useAuth();
+  const isMobile = useIsMobile();
   const [problems, setProblems] = useState<Problem[]>(mockProblems);
   const [modules, setModules] = useState<any[]>([]);
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
@@ -169,6 +167,14 @@ export default function DashboardPage() {
   const [loadingProblems, setLoadingProblems] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
+
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroScroll } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(heroScroll, [0, 1], [0, -60]);
+  const heroOpacity = useTransform(heroScroll, [0, 0.7], [1, 0]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -235,69 +241,98 @@ export default function DashboardPage() {
     fetchEDMMetrics();
   }, [authReady, user]);
 
-  const filteredProblems = problems.filter((prob) => {
+  const filteredProblems = useMemo(() => problems.filter((prob) => {
     const matchesSearch =
       prob.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prob.description.toLowerCase().includes(searchQuery.toLowerCase());
-
     if (!matchesSearch) return false;
-
     if (difficultyFilter === "easy") return prob.difficulty_score < 2.0 || prob.difficulty === "easy";
     if (difficultyFilter === "medium") return (prob.difficulty_score >= 2.0 && prob.difficulty_score < 3.8) || prob.difficulty === "medium";
     if (difficultyFilter === "hard") return prob.difficulty_score >= 3.8 || prob.difficulty === "hard";
     return true;
-  });
+  }), [problems, searchQuery, difficultyFilter]);
 
   return (
     <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 py-12 sm:py-16 space-y-20">
-      {/* Hero Section with Staggered Word Reveal & Visual Animation */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
-          >
-            <Activity className="w-4 h-4 text-amber-600 animate-pulse" />
-            <span>Society 5.0 Smart Learning & Educational Data Mining</span>
-          </motion.div>
+      {/* Hero — no parallax on mobile */}
+      {isMobile ? (
+        <section ref={heroRef} className="grid grid-cols-1 gap-8 items-center">
+          <div className="space-y-5 text-center">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm">
+              <Activity className="w-4 h-4 text-amber-600" />
+              <span>Society 5.0 Smart Learning & EDM</span>
+            </div>
 
-          <motion.h1
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-4xl sm:text-5xl lg:text-7xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap justify-center lg:justify-start gap-x-3 gap-y-1"
-          >
-            {HERO_TEXT.split(" ").map((word, index) => (
-              <motion.span key={index} variants={wordVariants} className="inline-block">
-                {word}
-              </motion.span>
-            ))}
-          </motion.h1>
+            <h1 className="text-3xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15]">
+              {HERO_TEXT}
+            </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl mx-auto lg:mx-0"
-          >
-            {HERO_SUBTEXT}
-          </motion.p>
-        </div>
+            <p className="text-base text-slate-600 font-sans tracking-tight leading-relaxed">
+              {HERO_SUBTEXT}
+            </p>
+          </div>
 
-        <div className="lg:col-span-5 w-full">
-          <HeroVisual />
-        </div>
-      </section>
+          <div className="w-full">
+            <HeroVisual />
+          </div>
+        </section>
+      ) : (
+        <motion.section
+          ref={heroRef}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+          style={{ y: heroY, opacity: heroOpacity }}
+        >
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-ivory-200/80 border border-slate-900/10 text-xs font-mono tracking-wider text-amber-800 uppercase shadow-sm"
+            >
+              <Activity className="w-4 h-4 text-amber-600" />
+              <span>Society 5.0 Smart Learning & Educational Data Mining</span>
+            </motion.div>
 
-      {/* Challenge of the Day (24h Featured Banner) */}
+            <motion.h1
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="text-4xl sm:text-5xl lg:text-7xl font-serif font-medium text-slate-900 tracking-tight leading-[1.15] flex flex-wrap justify-center lg:justify-start gap-x-3 gap-y-1"
+            >
+              {HERO_TEXT.split(" ").map((word, index) => (
+                <motion.span key={index} variants={wordVariants} className="inline-block">
+                  {word}
+                </motion.span>
+              ))}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
+              className="text-base sm:text-lg text-slate-600 font-sans tracking-tight leading-relaxed max-w-2xl mx-auto lg:mx-0"
+            >
+              {HERO_SUBTEXT}
+            </motion.p>
+          </div>
+
+          <div className="lg:col-span-5 w-full">
+            <HeroVisual />
+          </div>
+        </motion.section>
+      )}
+
+      {/* SCROLL ANIMATION #1 — Value Proposition */}
+      <ValueProposition />
+
+
+      {/* Challenge of the Day */}
       <ChallengeOfTheDay />
 
-      {/* Visual ZPD Adventure Quest Map */}
+      {/* ZPD Quest Map */}
       <ZPDQuestMap modules={modules} problems={problems} userSubmissions={userSubmissions} />
 
-      {/* Algorithmic Problems List */}
+      {/* Problem Set */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-900/10">
           <div>
@@ -314,7 +349,6 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        {/* Search & Difficulty Filter Bar */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-ivory-200/50 p-4 rounded-2xl border border-slate-900/10">
           <div className="md:col-span-7 relative">
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
@@ -326,7 +360,6 @@ export default function DashboardPage() {
               className="w-full pl-10 pr-4 py-2 rounded-xl bg-ivory-100 border border-slate-900/15 text-xs text-slate-800 font-sans focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-400"
             />
           </div>
-
           <div className="md:col-span-5 flex items-center space-x-2">
             <Filter className="w-4 h-4 text-slate-500 hidden sm:block ml-1" />
             <div className="flex-1 grid grid-cols-4 gap-1.5 bg-ivory-100 p-1 rounded-xl border border-slate-900/15">
@@ -353,13 +386,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          {filteredProblems.map((prob, idx) => (
-            <motion.div
+          {filteredProblems.map((prob) => (
+            <div
               key={prob.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 * idx }}
-              className="group flex flex-col justify-between bg-ivory-100 p-6 rounded-2xl border border-slate-900/10 transition-all duration-300 ease-out hover:border-slate-900/30 hover:scale-[1.02] shadow-sm relative overflow-hidden"
+              className="group flex flex-col justify-between bg-ivory-100 p-6 rounded-2xl border border-slate-900/10 transition-colors duration-200 hover:border-slate-900/30 shadow-sm relative overflow-hidden"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -368,20 +398,15 @@ export default function DashboardPage() {
                   </span>
                   <Award className="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition-colors" />
                 </div>
-
                 <h3 className="text-lg font-serif font-semibold text-slate-900 tracking-tight group-hover:text-amber-800 transition-colors">
                   {prob.title}
                 </h3>
-
                 <p className="text-xs text-slate-600 font-sans line-clamp-3 leading-relaxed tracking-tight">
                   {prob.description}
                 </p>
               </div>
-
               <div className="pt-6 mt-4 border-t border-slate-900/5 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-slate-500">
-                  Sandboxed Isolate Cgroup
-                </span>
+                <span className="text-[11px] font-mono text-slate-500">Sandboxed Isolate Cgroup</span>
                 <Link
                   href={`/problems/${prob.id}`}
                   className="inline-flex items-center text-xs font-semibold text-slate-900 group-hover:text-amber-800 tracking-tight transition-colors"
@@ -390,12 +415,12 @@ export default function DashboardPage() {
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Effort-Based Metrics Dashboard (EDM Section) */}
+      {/* EDM Dashboard */}
       <section id="edm-dashboard" className="space-y-6 pt-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-900/10">
           <div>
@@ -411,13 +436,12 @@ export default function DashboardPage() {
             Tracking metrics across your trajectory.
           </span>
         </div>
-
         <div className="bg-ivory-100 p-6 sm:p-8 rounded-2xl border border-slate-900/10 shadow-sm">
           <EffortDashboard metrics={metrics} />
         </div>
       </section>
 
-      {/* Engagement & Gamification (Leaderboard Section) */}
+      {/* Leaderboard */}
       <section id="leaderboard" className="space-y-6 pt-6 pb-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-900/10">
           <div>
@@ -433,7 +457,6 @@ export default function DashboardPage() {
             Powered by Redis O(log N) Sorted Sets (ZADD / ZRANGE) tracking solved problems and points across the platform.
           </span>
         </div>
-
         <Leaderboard />
       </section>
     </div>

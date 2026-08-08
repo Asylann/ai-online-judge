@@ -1,6 +1,6 @@
 # AI Online Judge — Polyglot Asynchronous Microservices Platform
 
-An advanced, production-grade competitive programming and AI-guided educational evaluation platform built inside a Polyglot Monorepo using Asynchronous Choreography, Real-Time WebSockets, and Educational Data Mining (EDM).
+An advanced, production-grade competitive programming and AI-guided educational evaluation platform built inside a Polyglot Monorepo using Asynchronous Choreography, Real-Time WebSockets, and Educational Data Mining.
 
 ### You can visit here: <a>https://aioj.studio</a>
 
@@ -103,3 +103,7 @@ Before launching the cluster, you must populate `.env` with secure secrets and y
 1. Generate secure 256-bit randomized strings for `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD`, and `JWT_SECRET`.
 2. Provide your OpenAI API Key under `OPENAI_API_KEY`.
 3. Configure `SERVER_HOST`, `SERVER_USER`, and `SSH_PRIVATE_KEY` inside your GitHub repository secrets for the deployment workflow.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

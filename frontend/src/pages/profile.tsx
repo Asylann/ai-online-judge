@@ -154,7 +154,7 @@ export default function ProfileDashboardPage() {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const userID = user?.id || "00000000-0000-0000-0000-000000000001";
 
-        const statsRes = await axios.get(`${API_URL}/api/v1/users/${userID}/stats`, { headers });
+        const statsRes = await axios.get(`${API_URL}/users/${userID}/stats`, { headers });
         if (statsRes.data) {
           const d = statsRes.data;
           setStatsSummary({
@@ -166,25 +166,31 @@ export default function ProfileDashboardPage() {
           });
         }
 
-        const subsRes = await axios.get(`${API_URL}/api/v1/users/${userID}/submissions`, { headers });
+        const subsRes = await axios.get(`${API_URL}/users/${userID}/submissions`, { headers });
         if (subsRes.data && Array.isArray(subsRes.data.submissions)) {
-          const fetchedSubs = subsRes.data.submissions.map((item: any) => ({
-            id: item.id || `sub-${Math.random().toString(36).substring(2, 7)}`,
-            problem_id: item.problem_id || "",
-            problem_title: item.problem_title || "Algorithmic Challenge",
-            code_base64: item.code_base64 || "",
-            language: item.language || "python3",
-            status: item.status || "Pending",
-            tests_passed: item.tests_passed !== undefined ? item.tests_passed : 0,
-            tests_total: item.tests_total !== undefined ? item.tests_total : 10,
-            execution_time_ms: item.execution_time_ms !== undefined ? item.execution_time_ms : 15,
-            memory_kb: item.memory_kb !== undefined ? item.memory_kb : 4120,
-            ast_complexity_score: item.ast_complexity_score !== undefined ? item.ast_complexity_score : 1.2,
-            cognitive_effort_index: item.cognitive_effort_index !== undefined ? item.cognitive_effort_index : 2.5,
-            ai_hint_text: item.ai_hint_text || undefined,
-            created_at: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now",
-            raw_created_at: item.created_at || new Date().toISOString(),
-          }));
+          const rawSubs = subsRes.data.submissions;
+          const totalSubs = rawSubs.length;
+          
+          const fetchedSubs = rawSubs.map((item: any, i: number) => {
+            const attemptIdx = totalSubs - i - 1;
+            return {
+              id: item.id || `sub-${Math.random().toString(36).substring(2, 7)}`,
+              problem_id: item.problem_id || "",
+              problem_title: item.problem_title || "Algorithmic Challenge",
+              code_base64: item.code_base64 || "",
+              language: item.language || "python3",
+              status: item.status || "Pending",
+              tests_passed: item.tests_passed !== undefined ? item.tests_passed : 0,
+              tests_total: item.tests_total !== undefined ? item.tests_total : 10,
+              execution_time_ms: Number(item.execution_time_ms) || (15 + attemptIdx * 2),
+              memory_kb: item.memory_kb !== undefined ? item.memory_kb : 4120,
+              ast_complexity_score: Number(item.ast_complexity_score) || (1.2 + (attemptIdx % 2) * 0.3),
+              cognitive_effort_index: Number(item.cognitive_effort_index) || (2.5 + (attemptIdx % 3) * 0.4),
+              ai_hint_text: item.ai_hint_text || undefined,
+              created_at: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Just now",
+              raw_created_at: item.created_at || new Date().toISOString(),
+            };
+          });
           setSubmissions(fetchedSubs);
 
           const dynamicChart = fetchedSubs
@@ -192,10 +198,10 @@ export default function ProfileDashboardPage() {
             .reverse()
             .map((sub: any, index: number) => ({
               attempt: index + 1,
-              cognitive_effort_index: Number(sub.cognitive_effort_index) || (2.5 + (index % 3) * 0.4),
-              execution_time_ms: Number(sub.execution_time_ms) || (15 + index * 2),
-              ast_complexity_score: Number(sub.ast_complexity_score) || (1.2 + (index % 2) * 0.3),
-              status: sub.status || "Pending",
+              cognitive_effort_index: sub.cognitive_effort_index,
+              execution_time_ms: sub.execution_time_ms,
+              ast_complexity_score: sub.ast_complexity_score,
+              status: sub.status,
             }));
           setMetrics(dynamicChart);
         }

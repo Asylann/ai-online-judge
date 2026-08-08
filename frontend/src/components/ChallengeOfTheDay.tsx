@@ -52,7 +52,7 @@ export const ChallengeOfTheDay: React.FC = () => {
         <div className="space-y-3 max-w-2xl">
           <div className="flex items-center space-x-2.5">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-900/10 border border-amber-900/20 text-[11px] font-mono tracking-wider uppercase text-amber-900 font-semibold">
-              <Flame className="w-3.5 h-3.5 mr-1.5 text-amber-700 animate-pulse" />
+              <Flame className="w-3.5 h-3.5 mr-1.5 text-amber-700" />
               Challenge of the Day (24h Featured)
             </span>
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-900/5 text-slate-700 uppercase font-medium">
